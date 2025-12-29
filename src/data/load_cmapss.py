@@ -16,15 +16,13 @@ def load_cmapss_txt(file_path: str | Path) -> pd.DataFrame:
     
     if df.shape[1] != len(COLS):
         raise ValueError(
-            f"{file_path.name}: expected {len(COLS)} columns after cleanup, got {df.shape[1]}"
+            f"{path.name}: expected {len(COLS)} columns after cleanup, got {df.shape[1]}"
         )
         
     df.columns = COLS
-    
     df["engine_id"] = df["engine_id"].astype(int)
     df["cycle"] = df["cycle"].astype(int)
     df = df.sort_values(["engine_id", "cycle"]).reset_index(drop=True)
-    
     return df
 
 def load_cmapss_rul(file_path: str | Path) -> pd.Series:
@@ -35,18 +33,20 @@ def load_cmapss_rul(file_path: str | Path) -> pd.Series:
 
 if __name__ == "__main__":
     raw = Path("data/raw")
-    
-    train_path = raw / "train_FD001.txt"
-    test_path = raw / "test_FD001.txt"
-    rul_path = raw / "RUL_FD001.txt"
-    
-    train = load_cmapss_txt(train_path)
-    test = load_cmapss_txt(test_path)
-    rul = load_cmapss_rul(rul_path)
-    
-    print("Train :", train.shape, "engines:", train["engine_id"].nunique())
-    print("Test :", test.shape, "engines:", test["engine_id"].nunique())
-    print("RUL :", rul.shape)
-    
-    print("\nTrain head:")
-    print(train.head())
+    for fd in ["FD001", "FD002", "FD003", "FD004"]: 
+        train_path = raw / f"train_{fd}.txt"
+        test_path = raw / f"test_{fd}.txt"
+        rul_path = raw / f"RUL_{fd}.txt"
+        
+        for p in [train_path, test_path, rul_path]:
+            if not p.exists():
+                raise FileNotFoundError(f"Missing file: {p}")
+        
+        train = load_cmapss_txt(train_path)
+        test = load_cmapss_txt(test_path)
+        rul = load_cmapss_rul(rul_path)
+
+        print(f"\n[{fd}]")
+        print("Train :", train.shape, "engines:", train["engine_id"].nunique())
+        print("Test :", test.shape, "engines:", test["engine_id"].nunique())
+        print("RUL :", rul.shape)
