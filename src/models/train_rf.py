@@ -9,12 +9,13 @@ from sklearn.model_selection import GroupShuffleSplit
 
 from src.features.rolling_features import make_rolling_features
 
-def model_path(fd: str, window: int) -> str:
-    return f"models/rf_{fd}_w{window}.joblib"
+def model_path(fd: str, window: int, include_slope: bool) -> str:
+    suffix = "_slope" if include_slope else ""
+    return f"models/rf_{fd}_w{window}{suffix}.joblib"
 
-def train(fd="FD001", window=30):
+def train(fd="FD001", window=30, include_slope=False):
     train_df = pd.read_parquet(f"data/processed/train_{fd}.parquet")
-    feats = make_rolling_features(train_df, window=window)
+    feats = make_rolling_features(train_df, window=window, include_slope=include_slope)
     
     X = feats.drop(columns=["RUL"])
     y = feats["RUL"].to_numpy()
@@ -42,8 +43,8 @@ def train(fd="FD001", window=30):
     print(f"{fd} VAL | MAE: {mae:.2f} RMSE: {rmse:.2f}")
     
     Path("models").mkdir(exist_ok=True)
-    joblib.dump(model, model_path(fd, window))
-    print("Saved model to", model_path(fd, window))
+    joblib.dump(model, model_path(fd, window, include_slope))
+    print("Saved model to", model_path(fd, window, include_slope))
 
 if __name__ == "__main__":
     train()
