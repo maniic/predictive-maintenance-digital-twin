@@ -1,0 +1,131 @@
+# =============================================================================
+# Predictive Maintenance Digital Twin - Configuration
+# =============================================================================
+
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  
+  # C-MAPSS dataset identifiers
+  datasets:
+    - FD001  # 1 operating condition, 1 fault mode (HPC degradation)
+    - FD002  # 6 operating conditions, 1 fault mode (HPC degradation)
+    - FD003  # 1 operating condition, 2 fault modes (HPC + Fan degradation)
+    - FD004  # 6 operating conditions, 2 fault modes (HPC + Fan degradation)
+  
+  # Column definitions based on NASA documentation
+  columns:
+    id: "engine_id"
+    cycle: "cycle"
+    settings:
+      - "setting_1"  # Altitude proxy
+      - "setting_2"  # Mach number proxy
+      - "setting_3"  # Throttle resolver angle (TRA)
+    sensors:
+      - "sensor_1"   # Fan inlet temperature (T2)
+      - "sensor_2"   # LPC outlet temperature (T24)
+      - "sensor_3"   # HPC outlet temperature (T30)
+      - "sensor_4"   # LPT outlet temperature (T50)
+      - "sensor_5"   # Fan inlet pressure (P2)
+      - "sensor_6"   # Bypass-duct pressure (P15)
+      - "sensor_7"   # HPC outlet pressure (P30)
+      - "sensor_8"   # Physical fan speed (Nf)
+      - "sensor_9"   # Physical core speed (Nc)
+      - "sensor_10"  # Engine pressure ratio (epr)
+      - "sensor_11"  # HPC outlet static pressure (Ps30)
+      - "sensor_12"  # Ratio of fuel flow to Ps30 (phi)
+      - "sensor_13"  # Corrected fan speed (NRf)
+      - "sensor_14"  # Corrected core speed (NRc)
+      - "sensor_15"  # Bypass ratio (BPR)
+      - "sensor_16"  # Burner fuel-air ratio (farB)
+      - "sensor_17"  # Bleed enthalpy (htBleed)
+      - "sensor_18"  # Demanded fan speed (Nf_dmd)
+      - "sensor_19"  # Demanded corrected fan speed (PCNfR_dmd)
+      - "sensor_20"  # HPT coolant bleed (W31)
+      - "sensor_21"  # LPT coolant bleed (W32)
+
+preprocessing:
+  # Sensor dropping strategy:
+  #   "none"     - Keep all sensors (let the model decide importance)
+  #   "auto"     - Automatically drop only truly zero-variance sensors
+  #   "manual"   - Use the drop_sensors list below
+  drop_strategy: "auto"
+  
+  # Manual list of sensors to drop (only used if drop_strategy: "manual")
+  # NOTE: We recommend "auto" or "none" - near-constant sensors may still
+  # contain subtle degradation signals that affect RUL prediction
+  drop_sensors: []
+  
+  # RUL capping - standard practice per NASA paper
+  # Assumes early cycles are "healthy" with flat RUL
+  rul_cap: 125
+  
+  # Normalization method: "minmax", "standard", or "robust"
+  normalization: "minmax"
+  
+  # Operating regime clustering (for FD002/FD004)
+  cluster_by_regime: true
+  n_regimes: 6
+
+features:
+  # Sliding window sizes for rolling statistics
+  window_sizes:
+    - 5
+    - 10
+    - 20
+    - 30
+  
+  # Rolling statistics to compute
+  rolling_stats:
+    - "mean"
+    - "std"
+    - "min"
+    - "max"
+    - "trend"  # Linear regression slope
+  
+  # Exponential moving average spans
+  ema_spans:
+    - 5
+    - 10
+    - 20
+
+dataset:
+  # Sequence length for deep learning models
+  sequence_length: 30
+  
+  # Stride for sliding window (1 = max overlap)
+  stride: 1
+  
+  # Validation split ratio (by engine, not by row)
+  val_ratio: 0.2
+  
+  # Random seed for reproducibility
+  seed: 42
+
+training:
+  batch_size: 64
+  learning_rate: 0.001
+  max_epochs: 100
+  early_stopping_patience: 10
+  
+models:
+  lstm:
+    hidden_size: 128
+    num_layers: 2
+    dropout: 0.3
+    bidirectional: true
+    
+  cnn:
+    channels: [32, 64, 128]
+    kernel_sizes: [3, 3, 3]
+    dropout: 0.3
+    
+  transformer:
+    d_model: 64
+    n_heads: 4
+    n_layers: 3
+    dropout: 0.2
+
+mlflow:
+  tracking_uri: "mlruns"
+  experiment_name: "cmapss-rul-prediction"
