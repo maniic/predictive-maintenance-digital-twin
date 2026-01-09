@@ -41,11 +41,22 @@ data/raw/*.txt
 data/raw/*.pdf
 data/processed/
 
-# Model artifacts
+# Model artifacts - binary files
 models/*.pt
 models/*.pth
 models/*.pkl
 models/*.joblib
+
+# Model checkpoints and preprocessors (binary, large)
+models/checkpoints/
+models/checkpoints_*/
+models/preprocessors/
+
+# Keep training results JSON files (tracked)
+# !models/*_results.json
+
+# PyTorch Lightning
+lightning_logs/
 
 # MLflow
 mlruns/
