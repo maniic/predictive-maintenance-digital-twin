@@ -407,9 +407,10 @@ class CMAPSSPreprocessor:
         """Get list of feature column names after preprocessing."""
         if not self.is_fitted_:
             raise RuntimeError("Preprocessor must be fitted first")
-        
+
         features = self.feature_cols_.copy()
-        if self.config.cluster_by_regime:
+        # Only include regime if clustering is enabled AND n_regimes > 1
+        if self.config.cluster_by_regime and self.config.n_regimes > 1:
             features.append("regime")
         return features
     
