@@ -1,0 +1,16 @@
+[
+  {
+    "model": "ImprovedLSTM",
+    "test_rmse": 15.80615234375,
+    "test_mae": 12.581554412841797,
+    "test_cmapss": 71150.0703125,
+    "dataset": "FD001"
+  },
+  {
+    "model": "GRU",
+    "test_rmse": 16.046463012695312,
+    "test_mae": 13.812000274658203,
+    "test_cmapss": 55169.4453125,
+    "dataset": "FD001"
+  }
+]

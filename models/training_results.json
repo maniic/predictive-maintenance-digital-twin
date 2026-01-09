@@ -1,0 +1,162 @@
+[
+  {
+    "dataset": "FD001",
+    "model": "lstm",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD001/lstm/epoch=16-val_loss=152.8478-val_rmse=10.9875.ckpt",
+    "test_rmse": 13.483782768249512,
+    "test_mae": 9.858240127563477,
+    "test_cmapss": 33552.4140625,
+    "val_rmse": 12.363164617340852,
+    "epochs": 38
+  },
+  {
+    "dataset": "FD001",
+    "model": "cnn",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD001/cnn/epoch=3-val_loss=245.1733-val_rmse=14.1379.ckpt",
+    "test_rmse": 17.632949829101562,
+    "test_mae": 13.798046112060547,
+    "test_cmapss": 67431.2890625,
+    "val_rmse": 15.65800956538872,
+    "epochs": 25
+  },
+  {
+    "dataset": "FD001",
+    "model": "transformer",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD001/transformer/epoch=20-val_loss=172.2099-val_rmse=11.5889.ckpt",
+    "test_rmse": 14.659914016723633,
+    "test_mae": 10.956026077270508,
+    "test_cmapss": 36651.7421875,
+    "val_rmse": 13.122875223287638,
+    "epochs": 42
+  },
+  {
+    "dataset": "FD001",
+    "model": "ensemble",
+    "checkpoint": "",
+    "test_rmse": 14.137077331542969,
+    "test_mae": 10.811867713928223,
+    "test_cmapss": 33665.21875,
+    "val_rmse": 0.0,
+    "epochs": 0
+  },
+  {
+    "dataset": "FD002",
+    "model": "lstm",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD002/lstm/epoch=21-val_loss=223.6369-val_rmse=13.7070.ckpt",
+    "test_rmse": 17.488584518432617,
+    "test_mae": 14.009790420532227,
+    "test_cmapss": 134707.515625,
+    "val_rmse": 14.954492839247393,
+    "epochs": 43
+  },
+  {
+    "dataset": "FD002",
+    "model": "cnn",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD002/cnn/epoch=0-val_loss=283.5284-val_rmse=14.6992.ckpt",
+    "test_rmse": 20.288728713989258,
+    "test_mae": 15.834336280822754,
+    "test_cmapss": 201267.703125,
+    "val_rmse": 16.838301023192816,
+    "epochs": 22
+  },
+  {
+    "dataset": "FD002",
+    "model": "transformer",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD002/transformer/epoch=15-val_loss=1732.8905-val_rmse=39.7477.ckpt",
+    "test_rmse": 39.36007308959961,
+    "test_mae": 36.326480865478516,
+    "test_cmapss": 1049701.0,
+    "val_rmse": 41.62800142848186,
+    "epochs": 37
+  },
+  {
+    "dataset": "FD002",
+    "model": "ensemble",
+    "checkpoint": "",
+    "test_rmse": 19.80164337158203,
+    "test_mae": 17.02036476135254,
+    "test_cmapss": 138640.96875,
+    "val_rmse": 0.0,
+    "epochs": 0
+  },
+  {
+    "dataset": "FD003",
+    "model": "lstm",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD003/lstm/epoch=15-val_loss=151.5508-val_rmse=10.5723.ckpt",
+    "test_rmse": 12.231252670288086,
+    "test_mae": 8.371193885803223,
+    "test_cmapss": 45676.453125,
+    "val_rmse": 12.310598158756024,
+    "epochs": 37
+  },
+  {
+    "dataset": "FD003",
+    "model": "cnn",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD003/cnn/epoch=5-val_loss=273.9665-val_rmse=14.1786.ckpt",
+    "test_rmse": 16.821325302124023,
+    "test_mae": 12.050699234008789,
+    "test_cmapss": 89725.09375,
+    "val_rmse": 16.551933171059467,
+    "epochs": 27
+  },
+  {
+    "dataset": "FD003",
+    "model": "transformer",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD003/transformer/epoch=20-val_loss=577.0972-val_rmse=19.8839.ckpt",
+    "test_rmse": 19.47063446044922,
+    "test_mae": 14.597977638244629,
+    "test_cmapss": 463350.0625,
+    "val_rmse": 24.02284679151807,
+    "epochs": 42
+  },
+  {
+    "dataset": "FD003",
+    "model": "ensemble",
+    "checkpoint": "",
+    "test_rmse": 13.65516471862793,
+    "test_mae": 10.13310432434082,
+    "test_cmapss": 59323.22265625,
+    "val_rmse": 0.0,
+    "epochs": 0
+  },
+  {
+    "dataset": "FD004",
+    "model": "lstm",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD004/lstm/epoch=6-val_loss=292.6843-val_rmse=14.0280.ckpt",
+    "test_rmse": 14.873287200927734,
+    "test_mae": 9.829720497131348,
+    "test_cmapss": 364603.625,
+    "val_rmse": 17.10801756886866,
+    "epochs": 28
+  },
+  {
+    "dataset": "FD004",
+    "model": "cnn",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD004/cnn/epoch=2-val_loss=413.7859-val_rmse=16.4297.ckpt",
+    "test_rmse": 17.445714950561523,
+    "test_mae": 11.233220100402832,
+    "test_cmapss": 537102.75,
+    "val_rmse": 20.341727019953268,
+    "epochs": 24
+  },
+  {
+    "dataset": "FD004",
+    "model": "transformer",
+    "checkpoint": "/Users/abdullah/projects/predictive-maintenance-digital-twin/models/checkpoints/FD004/transformer/epoch=68-val_loss=562.1151-val_rmse=19.2417.ckpt",
+    "test_rmse": 19.234455108642578,
+    "test_mae": 11.67007827758789,
+    "test_cmapss": 921859.1875,
+    "val_rmse": 23.708965630527437,
+    "epochs": 90
+  },
+  {
+    "dataset": "FD004",
+    "model": "ensemble",
+    "checkpoint": "",
+    "test_rmse": 16.021007537841797,
+    "test_mae": 10.137967109680176,
+    "test_cmapss": 416148.4375,
+    "val_rmse": 0.0,
+    "epochs": 0
+  }
+]
