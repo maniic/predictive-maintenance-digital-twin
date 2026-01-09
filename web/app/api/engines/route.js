@@ -1,0 +1,36 @@
+import { spawn } from 'child_process'
+import path from 'path'
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url)
+  const dataset = searchParams.get('dataset') || 'FD001'
+
+  const projectRoot = path.resolve(process.cwd(), '..')
+
+  return new Promise((resolve) => {
+    const py = spawn('python', [
+      'src/api/predict.py',
+      '--action', 'engines',
+      '--dataset', dataset,
+    ], { cwd: projectRoot })
+
+    let stdout = ''
+    let stderr = ''
+
+    py.stdout.on('data', (data) => { stdout += data })
+    py.stderr.on('data', (data) => { stderr += data })
+
+    py.on('close', (code) => {
+      if (code !== 0) {
+        resolve(Response.json({ error: stderr || 'Failed to get engines' }, { status: 500 }))
+      } else {
+        try {
+          const result = JSON.parse(stdout)
+          resolve(Response.json(result))
+        } catch {
+          resolve(Response.json({ error: 'Invalid response' }, { status: 500 }))
+        }
+      }
+    })
+  })
+}
