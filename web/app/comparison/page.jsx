@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import Link from 'next/link'
-import dynamic from 'next/dynamic'
-
-const Plot = dynamic(() => import('react-plotly.js'), { ssr: false })
+import Navigation from '../../components/Navigation'
+import PlotlyChart from '../../components/PlotlyChart'
+import { fetchComparison } from '../../lib/api'
 
 const METRICS = [
   { value: 'test_rmse', label: 'RMSE' },
@@ -29,19 +28,10 @@ export default function ComparisonPage() {
     setLoading(true)
     setError(null)
     try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 30000)
-      const res = await fetch('/api/comparison', { signal: controller.signal })
-      clearTimeout(timeout)
-      if (!res.ok) throw new Error('Failed to fetch comparison data')
-      const d = await res.json()
+      const d = await fetchComparison()
       setData(d)
     } catch (err) {
-      if (err.name === 'AbortError') {
-        setError('Request timed out. Please try again.')
-      } else {
-        setError(err.message || 'Failed to load data')
-      }
+      setError(err.message || 'Failed to load data')
     } finally {
       setLoading(false)
     }
@@ -81,7 +71,7 @@ export default function ComparisonPage() {
     })
 
     const models = [...new Set(data.results.map(r => r.model))]
-    const datasets = Object.keys(byDataset)
+    const dsets = Object.keys(byDataset)
 
     if (selectedDataset !== 'all') {
       return models.map(model => ({
@@ -94,8 +84,8 @@ export default function ComparisonPage() {
     }
 
     return models.map((model, i) => ({
-      x: datasets,
-      y: datasets.map(ds => byDataset[ds]?.[model] || 0),
+      x: dsets,
+      y: dsets.map(ds => byDataset[ds]?.[model] || 0),
       type: 'bar',
       name: model.toUpperCase(),
       marker: { color: ['#00ffaa', '#ff6b35', '#4dabf7', '#be4bdb', '#fcc419'][i % 5] },
@@ -113,20 +103,7 @@ export default function ComparisonPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b border-[var(--border)] px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="status-dot" />
-            <span className="mono text-xs tracking-wider">DIGITAL TWIN</span>
-          </Link>
-          <nav className="flex items-center gap-6">
-            <Link href="/prediction" className="nav-link">Predict</Link>
-            <Link href="/simulation" className="nav-link">Simulate</Link>
-            <Link href="/comparison" className="nav-link active">Compare</Link>
-          </nav>
-        </div>
-      </header>
+      <Navigation activePage="/comparison" />
 
       <main className="flex-1">
         <div className="max-w-5xl mx-auto px-6 py-8">
@@ -186,22 +163,16 @@ export default function ComparisonPage() {
                 <div className="metric-label mb-4">
                   {METRICS.find(m => m.value === metric)?.label} by Model
                 </div>
-                <Plot
+                <PlotlyChart
                   data={chartData}
                   layout={{
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent',
-                    font: { color: '#666', family: 'monospace', size: 10 },
                     margin: { t: 10, b: 60, l: 50, r: 10 },
                     height: 250,
                     barmode: 'group',
-                    xaxis: { gridcolor: '#1a1a1a', zeroline: false },
-                    yaxis: { gridcolor: '#1a1a1a', title: METRICS.find(m => m.value === metric)?.label, zeroline: false },
+                    yaxis: { title: METRICS.find(m => m.value === metric)?.label },
                     legend: { orientation: 'h', y: -0.2, x: 0.5, xanchor: 'center' },
                     showlegend: selectedDataset === 'all',
                   }}
-                  config={{ displayModeBar: false }}
-                  style={{ width: '100%' }}
                 />
               </div>
 

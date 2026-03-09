@@ -114,15 +114,20 @@ Dataset available from: [NASA Prognostics Data Repository](https://data.nasa.gov
 
 ```bash
 # Train all base models on FD001
-python scripts/train_all.py --dataset FD001
+python scripts/train_all_models.py --datasets FD001
 
 # Train a specific model
-python scripts/train.py --model lstm --dataset FD001
+python scripts/train_all_models.py --models lstm --datasets FD001
 ```
 
 ### Run Web Dashboard
 
+The Next.js dashboard spawns Python subprocesses for ML inference, so your Python virtual environment must be active before starting the dev server.
+
 ```bash
+# Make sure your Python venv is active first
+source .venv/bin/activate
+
 cd web
 npm install
 npm run dev

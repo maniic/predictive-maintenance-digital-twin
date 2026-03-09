@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import Link from 'next/link'
-import dynamic from 'next/dynamic'
-
-const Plot = dynamic(() => import('react-plotly.js'), { ssr: false, loading: () => <div className="h-[200px] skeleton" /> })
+import Navigation from '../../components/Navigation'
+import Sidebar from '../../components/Sidebar'
+import MetricCard from '../../components/MetricCard'
+import PlotlyChart from '../../components/PlotlyChart'
+import { fetchEngines, fetchPrediction } from '../../lib/api'
 
 const DATASETS = ['FD001', 'FD002', 'FD003', 'FD004']
 const MODELS = [
@@ -21,7 +22,6 @@ const DATASET_INFO = {
   FD004: { conditions: 6, faults: 2, desc: '6 conditions, HPC + Fan' },
 }
 
-// Loading skeleton component
 const Skeleton = ({ className = '' }) => (
   <div className={`skeleton ${className}`} />
 )
@@ -40,11 +40,7 @@ export default function PredictionPage() {
   useEffect(() => {
     setEnginesLoading(true)
     setError(null)
-    fetch(`/api/engines?dataset=${dataset}`)
-      .then(r => {
-        if (!r.ok) throw new Error('Failed to load engines')
-        return r.json()
-      })
+    fetchEngines(dataset)
       .then(data => {
         setEngines(data.engines || [])
         if (data.engines?.length) setEngine(data.engines[0])
@@ -58,27 +54,10 @@ export default function PredictionPage() {
     setLoading(true)
     setError(null)
     try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 30000)
-
-      const res = await fetch('/api/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dataset, engine, model }),
-        signal: controller.signal,
-      })
-      clearTimeout(timeout)
-
-      if (!res.ok) throw new Error('Prediction failed')
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
+      const data = await fetchPrediction(dataset, engine, model)
       setPrediction(data)
     } catch (err) {
-      if (err.name === 'AbortError') {
-        setError('Request timed out. Please try again.')
-      } else {
-        setError(err.message || 'An error occurred')
-      }
+      setError(err.message || 'An error occurred')
       setPrediction(null)
     }
     setLoading(false)
@@ -107,126 +86,74 @@ export default function PredictionPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b border-[var(--border)] px-4 md:px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="status-dot" />
-            <span className="mono text-xs tracking-wider">DIGITAL TWIN</span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/prediction" className="nav-link active">Predict</Link>
-            <Link href="/simulation" className="nav-link">Simulate</Link>
-            <Link href="/comparison" className="nav-link">Compare</Link>
-          </nav>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-      </header>
+      <Navigation
+        activePage="/prediction"
+        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+      />
 
       <div className="flex-1 flex flex-col md:flex-row">
-        {/* Mobile Overlay */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        {/* Sidebar */}
-        <aside className={`
-          fixed md:relative inset-y-0 left-0 z-50
-          w-64 bg-[var(--bg-primary)] border-r border-[var(--border)] p-6
-          transform transition-transform duration-200
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
-          md:flex-shrink-0 overflow-y-auto
-        `}>
-          {/* Mobile close button */}
-          <button
-            className="md:hidden absolute top-4 right-4"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-
-          {/* Mobile nav links */}
-          <nav className="md:hidden flex flex-col gap-4 mb-6 pb-6 border-b border-[var(--border)]">
-            <Link href="/prediction" className="nav-link active">Predict</Link>
-            <Link href="/simulation" className="nav-link">Simulate</Link>
-            <Link href="/comparison" className="nav-link">Compare</Link>
-          </nav>
-
-          <div className="space-y-5">
-            <div>
-              <label className="metric-label block mb-2">Dataset</label>
-              <select
-                value={dataset}
-                onChange={(e) => setDataset(e.target.value)}
-                className="w-full bg-[var(--bg-panel)] border border-[var(--border)] px-3 py-2 mono text-sm"
-              >
-                {DATASETS.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-              <p className="text-xs text-[var(--text-muted)] mt-2">
-                {DATASET_INFO[dataset].desc}
-              </p>
-            </div>
-
-            <div>
-              <label className="metric-label block mb-2">Model</label>
-              <select
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                className="w-full bg-[var(--bg-panel)] border border-[var(--border)] px-3 py-2 mono text-sm"
-              >
-                {MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="metric-label block mb-2">Engine ID</label>
-              {enginesLoading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : (
-                <select
-                  value={engine}
-                  onChange={(e) => setEngine(Number(e.target.value))}
-                  className="w-full bg-[var(--bg-panel)] border border-[var(--border)] px-3 py-2 mono text-sm"
-                >
-                  {engines.map(e => <option key={e} value={e}>{e}</option>)}
-                </select>
-              )}
-              <p className="text-xs text-[var(--text-muted)] mt-2">
-                {engines.length} engines available
-              </p>
-            </div>
-
-            <button
-              onClick={() => { predict(); setSidebarOpen(false); }}
-              disabled={loading || enginesLoading}
-              className="btn-primary w-full disabled:opacity-50 flex items-center justify-center gap-2"
+        <Sidebar
+          activePage="/prediction"
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        >
+          <div>
+            <label className="metric-label block mb-2">Dataset</label>
+            <select
+              value={dataset}
+              onChange={(e) => setDataset(e.target.value)}
+              className="w-full bg-[var(--bg-panel)] border border-[var(--border)] px-3 py-2 mono text-sm"
             >
-              {loading && (
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              )}
-              {loading ? 'Analyzing...' : 'Run Prediction'}
-            </button>
+              {DATASETS.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+            <p className="text-xs text-[var(--text-muted)] mt-2">
+              {DATASET_INFO[dataset].desc}
+            </p>
           </div>
-        </aside>
+
+          <div>
+            <label className="metric-label block mb-2">Model</label>
+            <select
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              className="w-full bg-[var(--bg-panel)] border border-[var(--border)] px-3 py-2 mono text-sm"
+            >
+              {MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="metric-label block mb-2">Engine ID</label>
+            {enginesLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <select
+                value={engine}
+                onChange={(e) => setEngine(Number(e.target.value))}
+                className="w-full bg-[var(--bg-panel)] border border-[var(--border)] px-3 py-2 mono text-sm"
+              >
+                {engines.map(e => <option key={e} value={e}>{e}</option>)}
+              </select>
+            )}
+            <p className="text-xs text-[var(--text-muted)] mt-2">
+              {engines.length} engines available
+            </p>
+          </div>
+
+          <button
+            onClick={() => { predict(); setSidebarOpen(false); }}
+            disabled={loading || enginesLoading}
+            className="btn-primary w-full disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {loading && (
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {loading ? 'Analyzing...' : 'Run Prediction'}
+          </button>
+        </Sidebar>
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-6 overflow-auto">
@@ -240,10 +167,7 @@ export default function PredictionPage() {
             {error && (
               <div className="panel p-6 mb-6 border-l-2 border-[var(--accent-red)]">
                 <p className="text-[var(--accent-red)] mono text-sm mb-3">{error}</p>
-                <button
-                  onClick={predict}
-                  className="btn-secondary text-xs"
-                >
+                <button onClick={predict} className="btn-secondary text-xs">
                   Retry
                 </button>
               </div>
@@ -290,7 +214,7 @@ export default function PredictionPage() {
                         {prediction.rul.toFixed(0)}
                       </div>
                       <div className="mono text-xs md:text-sm text-[var(--text-muted)] mt-2">
-                        ±{prediction.uncertainty.toFixed(1)} cycles
+                        &plusmn;{prediction.uncertainty.toFixed(1)} cycles
                       </div>
                     </div>
                     <div>
@@ -307,24 +231,20 @@ export default function PredictionPage() {
 
                 {/* Secondary Metrics */}
                 <div className="grid grid-cols-3 gap-2 md:gap-4">
-                  <div className="panel p-3 md:p-5">
-                    <div className="metric-label mb-1">Error</div>
-                    <div className={`metric-value text-lg md:text-2xl ${Math.abs(prediction.error) > 10 ? 'text-[var(--accent-amber)]' : ''}`}>
-                      {prediction.error > 0 ? '+' : ''}{prediction.error.toFixed(1)}
-                    </div>
-                  </div>
-                  <div className="panel p-3 md:p-5">
-                    <div className="metric-label mb-1">Health</div>
-                    <div className="metric-value text-lg md:text-2xl" style={{ color: getHealthStatus(prediction.health_score).color }}>
-                      {(prediction.health_score * 100).toFixed(0)}%
-                    </div>
-                  </div>
-                  <div className="panel p-3 md:p-5">
-                    <div className="metric-label mb-1">Cycles</div>
-                    <div className="metric-value text-lg md:text-2xl">
-                      {prediction.total_cycles}
-                    </div>
-                  </div>
+                  <MetricCard
+                    label="Error"
+                    value={`${prediction.error > 0 ? '+' : ''}${prediction.error.toFixed(1)}`}
+                    highlight={Math.abs(prediction.error) > 10 ? 'text-[var(--accent-amber)]' : ''}
+                  />
+                  <MetricCard
+                    label="Health"
+                    value={`${(prediction.health_score * 100).toFixed(0)}%`}
+                    highlight={`text-[${getHealthStatus(prediction.health_score).color}]`}
+                  />
+                  <MetricCard
+                    label="Cycles"
+                    value={prediction.total_cycles}
+                  />
                 </div>
 
                 {/* Health Bar */}
@@ -378,7 +298,7 @@ export default function PredictionPage() {
                   <div className="panel p-4 md:p-6 overflow-x-auto">
                     <div className="metric-label mb-4">Prediction Trajectory</div>
                     <div className="min-w-[300px]">
-                      <Plot
+                      <PlotlyChart
                         data={[
                           {
                             x: trajectoryData.map(d => d.cycle),
@@ -398,18 +318,12 @@ export default function PredictionPage() {
                           },
                         ]}
                         layout={{
-                          paper_bgcolor: 'transparent',
-                          plot_bgcolor: 'transparent',
-                          font: { color: '#666', family: 'monospace', size: 10 },
-                          margin: { t: 10, b: 40, l: 40, r: 10 },
                           height: 200,
-                          xaxis: { gridcolor: '#1a1a1a', title: 'Cycle', zeroline: false },
-                          yaxis: { gridcolor: '#1a1a1a', title: 'RUL', zeroline: false },
+                          xaxis: { title: 'Cycle' },
+                          yaxis: { title: 'RUL' },
                           legend: { orientation: 'h', y: 1.15, x: 0.5, xanchor: 'center' },
                           showlegend: true,
                         }}
-                        config={{ displayModeBar: false, staticPlot: false }}
-                        style={{ width: '100%' }}
                       />
                     </div>
                   </div>
