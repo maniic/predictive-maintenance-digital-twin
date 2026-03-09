@@ -9,42 +9,52 @@ export default function Sidebar({ activePage, isOpen, onClose, children }) {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
           onClick={onClose}
         />
       )}
 
       <aside className={`
         fixed md:relative inset-y-0 left-0 z-50
-        w-64 bg-[var(--bg-primary)] border-r border-[var(--border)] p-6
+        w-[260px] bg-[var(--bg-surface)] border-r border-[var(--border)]
         transform transition-transform duration-200
         ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
         md:flex-shrink-0 overflow-y-auto
       `}>
-        {/* Mobile close button */}
-        <button
-          className="md:hidden absolute top-4 right-4"
-          onClick={onClose}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        {/* Mobile header */}
+        <div className="md:hidden flex items-center justify-between p-4 border-b border-[var(--border)]">
+          <span className="font-condensed text-xs uppercase tracking-wider text-[var(--text-muted)]">
+            Controls
+          </span>
+          <button
+            onClick={onClose}
+            className="p-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-        {/* Mobile nav links */}
-        <nav className="md:hidden flex flex-col gap-4 mb-6 pb-6 border-b border-[var(--border)]">
+        {/* Mobile nav */}
+        <nav className="md:hidden flex flex-col gap-1 p-3 border-b border-[var(--border)]">
           {NAV_ITEMS.map(item => (
             <Link
               key={item.href}
               href={item.href}
-              className={`nav-link ${activePage === item.href ? 'active' : ''}`}
+              className={`px-3 py-2 rounded text-sm ${
+                activePage === item.href
+                  ? 'text-[var(--amber)] bg-[var(--amber-dim)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-raised)]'
+              } transition-colors`}
             >
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="space-y-5">
+        {/* Controls */}
+        <div className="p-5 space-y-5">
           {children}
         </div>
       </aside>

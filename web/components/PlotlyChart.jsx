@@ -11,12 +11,22 @@ export default function PlotlyChart({ data, layout, config, className = '' }) {
   const defaultLayout = {
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
-    font: { color: '#666', family: 'Geist Mono, monospace', size: 11 },
-    margin: { t: 10, b: 40, l: 40, r: 10 },
-    height: 200,
+    font: { color: '#94a3b8', family: 'IBM Plex Mono, monospace', size: 10 },
+    margin: { t: 10, b: 40, l: 45, r: 10 },
+    height: 220,
     ...layout,
-    xaxis: { gridcolor: '#1a1a1a', zeroline: false, ...layout?.xaxis },
-    yaxis: { gridcolor: '#1a1a1a', zeroline: false, ...layout?.yaxis },
+    xaxis: {
+      gridcolor: 'rgba(30, 41, 59, 0.8)',
+      zeroline: false,
+      tickfont: { size: 9 },
+      ...layout?.xaxis,
+    },
+    yaxis: {
+      gridcolor: 'rgba(30, 41, 59, 0.8)',
+      zeroline: false,
+      tickfont: { size: 9 },
+      ...layout?.yaxis,
+    },
   }
 
   const defaultConfig = {

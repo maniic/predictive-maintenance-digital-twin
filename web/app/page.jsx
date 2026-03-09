@@ -1,158 +1,168 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { fetchComparison } from '../lib/api'
+
+const Skeleton = ({ className = '' }) => <div className={`skeleton ${className}`} />
 
 export default function Home() {
+  const [stats, setStats] = useState(null)
+
+  useEffect(() => {
+    fetchComparison()
+      .then(data => {
+        if (!data?.results?.length) return
+        const results = data.results
+        const models = new Set(results.map(r => r.model))
+        const datasets = new Set(results.map(r => r.dataset))
+        const fd001 = results.filter(r => r.dataset === 'FD001')
+        const bestRmse = fd001.length
+          ? Math.min(...fd001.map(r => r.test_rmse).filter(Boolean))
+          : null
+        setStats({
+          modelCount: models.size,
+          bestRmse: bestRmse ? bestRmse.toFixed(1) : '—',
+          datasetCount: datasets.size,
+        })
+      })
+      .catch(() => {})
+  }, [])
+
+  const statsData = [
+    { value: stats?.modelCount ?? '7', label: 'DL Models', sub: 'LSTM / CNN / Transformer' },
+    { value: stats?.bestRmse ?? '—', label: 'Best RMSE', sub: 'Cycles error (FD001)' },
+    { value: '21', label: 'Sensors', sub: 'Temp, pressure, speed' },
+    { value: stats?.datasetCount ?? '4', label: 'Datasets', sub: 'FD001 — FD004' },
+  ]
+
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b border-[var(--border)] px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="status-dot pulse-slow" />
-            <span className="mono text-xs tracking-wider">DIGITAL TWIN</span>
+      {/* Top bar */}
+      <header className="border-b border-[var(--border)] bg-[var(--bg-surface)]/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-4 md:px-6 h-12">
+          <div className="flex items-center gap-2.5">
+            <div className="indicator" />
+            <span className="font-condensed text-[0.7rem] font-600 uppercase tracking-[0.15em] text-[var(--text-secondary)]">
+              RUL Monitor
+            </span>
           </div>
           <nav className="flex items-center gap-6">
-            <Link href="/prediction" className="nav-link">Predict</Link>
-            <Link href="/simulation" className="nav-link">Simulate</Link>
-            <Link href="/comparison" className="nav-link">Compare</Link>
+            <Link href="/prediction" className="nav-link">Prediction</Link>
+            <Link href="/simulation" className="nav-link">Simulation</Link>
+            <Link href="/comparison" className="nav-link">Comparison</Link>
           </nav>
         </div>
       </header>
 
-      {/* Main */}
-      <main className="flex-1 flex items-center">
-        <div className="max-w-6xl mx-auto px-6 py-16 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Left Column - Text */}
-            <div>
-              <p className="mono text-xs text-[var(--accent)] mb-4 tracking-wider animate-fade-in">
-                PREDICTIVE MAINTENANCE
-              </p>
-              <h1 className="text-4xl lg:text-5xl font-light mb-6 tracking-tight leading-tight animate-slide-up">
-                Remaining Useful Life
-                <br />
-                <span className="text-[var(--text-secondary)]">Prediction System</span>
-              </h1>
-              <p className="text-[var(--text-secondary)] mb-8 leading-relaxed max-w-lg animate-slide-up-delay">
-                Deep learning models for turbofan engine prognostics using the NASA C-MAPSS dataset.
-                Real-time RUL prediction with uncertainty quantification and ensemble methods.
-              </p>
-              <div className="flex flex-wrap gap-3 animate-slide-up-delay-2">
-                <Link href="/prediction" className="btn-primary">
-                  Run Prediction
-                </Link>
-                <Link href="/simulation" className="btn-secondary">
-                  Live Demo
-                </Link>
-                <Link href="/comparison" className="btn-secondary">
-                  View Models
-                </Link>
-              </div>
-            </div>
-
-            {/* Right Column - Visual */}
-            <div className="hidden lg:block">
-              <div className="relative">
-                {/* Background glow */}
-                <div className="absolute inset-0 bg-gradient-radial from-[var(--accent)]/5 to-transparent blur-3xl" />
-
-                {/* Engine visualization placeholder */}
-                <div className="relative p-8">
-                  <div className="aspect-square flex items-center justify-center">
-                    <div className="relative">
-                      {/* Animated rings */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-48 h-48 border border-[var(--border)] rounded-full animate-spin-slow opacity-30" />
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-36 h-36 border border-[var(--border)] rounded-full animate-spin-slow-reverse opacity-40" />
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-24 h-24 border border-[var(--accent)]/30 rounded-full animate-pulse-slow" />
-                      </div>
-
-                      {/* Center content */}
-                      <div className="relative w-64 h-64 flex flex-col items-center justify-center text-center">
-                        <div className="metric-label mb-2">System Status</div>
-                        <div className="metric-value text-4xl text-[var(--accent)] mb-1">ONLINE</div>
-                        <div className="text-xs text-[var(--text-muted)]">7 models ready</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      {/* Hero */}
+      <main className="flex-1 flex items-center justify-center px-6">
+        <div className="max-w-4xl w-full py-16 md:py-24">
+          {/* System header */}
+          <div className="animate-fade-up">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="h-px flex-1 bg-gradient-to-r from-[var(--amber)]/40 to-transparent" />
+              <span className="font-condensed text-[0.65rem] uppercase tracking-[0.2em] text-[var(--amber)]">
+                Predictive Maintenance System
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-l from-[var(--amber)]/40 to-transparent" />
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--border)] mt-16 animate-fade-in-delay">
-            {[
-              { value: '7', label: 'Deep Learning Models', detail: 'LSTM, CNN, Transformer, Ensemble' },
-              { value: '11.7', label: 'Best RMSE Score', detail: 'Cycles prediction error' },
-              { value: '21', label: 'Engine Sensors', detail: 'Temperature, pressure, speed' },
-              { value: '4', label: 'C-MAPSS Datasets', detail: 'FD001 - FD004' },
-            ].map((stat) => (
-              <div key={stat.label} className="bg-[var(--bg-primary)] p-6 hover:bg-[var(--bg-secondary)] transition-colors group">
-                <div className="metric-value text-3xl mb-1 group-hover:text-[var(--accent)] transition-colors">{stat.value}</div>
-                <div className="metric-label mb-2">{stat.label}</div>
-                <div className="text-xs text-[var(--text-muted)]">{stat.detail}</div>
+          <div className="text-center animate-fade-up-1">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-300 tracking-tight mb-4 text-[var(--text-bright)]">
+              Remaining Useful Life
+            </h1>
+            <h2 className="text-lg md:text-xl font-300 text-[var(--text-muted)] mb-8">
+              Turbofan Engine Prognostics — NASA C-MAPSS
+            </h2>
+            <p className="text-sm text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed mb-10">
+              Deep learning ensemble for real-time RUL estimation with uncertainty quantification.
+              7 models including LSTM, CNN, Transformer, and weighted ensemble methods.
+            </p>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap justify-center gap-3 mb-16 animate-fade-up-2">
+            <Link href="/prediction" className="btn-primary">
+              Run Prediction
+            </Link>
+            <Link href="/simulation" className="btn-secondary">
+              Degradation Sim
+            </Link>
+            <Link href="/comparison" className="btn-secondary">
+              Model Comparison
+            </Link>
+          </div>
+
+          {/* Stats strip */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px border border-[var(--border)] animate-fade-up-3">
+            {statsData.map((stat) => (
+              <div key={stat.label} className="bg-[var(--bg-surface)] p-5 md:p-6 group hover:bg-[var(--bg-raised)] transition-colors">
+                {stats === null && stat.label !== 'Sensors' ? (
+                  <>
+                    <Skeleton className="h-8 w-12 mb-2" />
+                    <div className="data-label mb-1">{stat.label}</div>
+                    <div className="font-mono text-[0.6rem] text-[var(--text-faint)]">{stat.sub}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="data-value text-2xl md:text-3xl mb-1 group-hover:text-[var(--amber)] transition-colors">
+                      {stat.value}
+                    </div>
+                    <div className="data-label mb-1">{stat.label}</div>
+                    <div className="font-mono text-[0.6rem] text-[var(--text-faint)]">{stat.sub}</div>
+                  </>
+                )}
               </div>
             ))}
           </div>
 
-          {/* Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12">
-            <Link href="/prediction" className="panel p-6 hover:border-[var(--accent)]/30 transition-all group">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] text-sm">
-                  P
+          {/* Module cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-6">
+            {[
+              {
+                href: '/prediction',
+                tag: 'PRED',
+                title: 'Prediction',
+                desc: 'Ensemble RUL prediction with confidence intervals from multiple deep learning architectures.',
+              },
+              {
+                href: '/simulation',
+                tag: 'SIM',
+                title: 'Simulation',
+                desc: 'Real-time engine degradation playback with live ML-backed RUL tracking and health alerts.',
+              },
+              {
+                href: '/comparison',
+                tag: 'COMP',
+                title: 'Comparison',
+                desc: 'Cross-model performance analysis with RMSE, MAE, and asymmetric C-MAPSS scoring.',
+              },
+            ].map((card) => (
+              <Link key={card.href} href={card.href} className="card p-5 hover:border-[var(--border-light)] transition-all group">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <span className="font-mono text-[0.6rem] px-1.5 py-0.5 bg-[var(--amber-dim)] text-[var(--amber)] rounded-sm">
+                    {card.tag}
+                  </span>
+                  <span className="font-condensed text-xs uppercase tracking-wider text-[var(--text-secondary)] group-hover:text-[var(--text-bright)] transition-colors">
+                    {card.title}
+                  </span>
                 </div>
-                <div className="metric-label group-hover:text-[var(--text-primary)] transition-colors">Prediction</div>
-              </div>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                Analyze engine sensor data and get RUL predictions with confidence intervals from multiple deep learning models.
-              </p>
-            </Link>
-
-            <Link href="/simulation" className="panel p-6 hover:border-[var(--accent)]/30 transition-all group">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] text-sm">
-                  S
-                </div>
-                <div className="metric-label group-hover:text-[var(--text-primary)] transition-colors">Simulation</div>
-              </div>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                Watch real-time engine degradation simulation with live RUL updates, health scores, and maintenance alerts.
-              </p>
-            </Link>
-
-            <Link href="/comparison" className="panel p-6 hover:border-[var(--accent)]/30 transition-all group">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] text-sm">
-                  C
-                </div>
-                <div className="metric-label group-hover:text-[var(--text-primary)] transition-colors">Comparison</div>
-              </div>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                Compare model performance across datasets with RMSE, MAE, and C-MAPSS scores. Filter and sort results.
-              </p>
-            </Link>
+                <p className="text-[0.8rem] text-[var(--text-muted)] leading-relaxed group-hover:text-[var(--text-secondary)] transition-colors">
+                  {card.desc}
+                </p>
+              </Link>
+            ))}
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--border)] px-6 py-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 mono text-xs text-[var(--text-muted)]">
-          <div className="flex items-center gap-4">
-            <span>NASA C-MAPSS Dataset</span>
-            <span className="text-[var(--border)]">|</span>
-            <span>PyTorch Lightning</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span>MLflow Tracking</span>
-            <span className="text-[var(--border)]">|</span>
-            <span>Next.js + Plotly</span>
-          </div>
+      <footer className="border-t border-[var(--border)] px-6 py-3">
+        <div className="flex items-center justify-between font-mono text-[0.6rem] text-[var(--text-faint)]">
+          <span>NASA C-MAPSS / PyTorch Lightning / MLflow</span>
+          <span>Next.js + Plotly.js</span>
         </div>
       </footer>
     </div>

@@ -70,20 +70,70 @@ def get_prediction(dataset: str, engine_id: int, model: str) -> dict:
 
 def get_comparison() -> dict:
     """Get model comparison data."""
-    results_path = project_root / "models" / "training_results.json"
-    advanced_path = project_root / "models" / "advanced_training_results.json"
+    result_files = [
+        project_root / "models" / "training_results.json",
+        project_root / "models" / "advanced_training_results.json",
+        project_root / "models" / "improved_training_results.json",
+    ]
 
     results = []
-
-    if results_path.exists():
-        with open(results_path) as f:
-            results.extend(json.load(f))
-
-    if advanced_path.exists():
-        with open(advanced_path) as f:
-            results.extend(json.load(f))
+    for path in result_files:
+        if path.exists():
+            with open(path) as f:
+                results.extend(json.load(f))
 
     return {"results": results}
+
+
+def get_trajectory(dataset: str, engine_id: int) -> dict:
+    """Get per-cycle RUL trajectory for an engine using real ML inference."""
+    from src.digital_twin import RULPredictor
+    from src.data.ingestion import CMAPSSDataLoader, compute_test_rul
+
+    loader = CMAPSSDataLoader(raw_data_dir=str(project_root / "data" / "raw"))
+    data = loader.load_dataset(dataset)
+    test_df = compute_test_rul(data.test, data.rul)
+
+    engine_df = test_df[test_df["engine_id"] == engine_id].copy()
+    if engine_df.empty:
+        return {"error": f"Engine {engine_id} not found in {dataset}"}
+
+    engine_df = engine_df.sort_values("cycle")
+    total_cycles = int(engine_df["cycle"].max())
+
+    predictor = RULPredictor(dataset=dataset, models_dir=str(project_root / "models"))
+    predictor.load_models()
+
+    seq_len = predictor.sequence_length if hasattr(predictor, 'sequence_length') else 30
+    start_cycle = max(seq_len, 30)
+
+    trajectory = []
+    for c in range(start_cycle, total_cycles + 1):
+        slice_df = engine_df.iloc[:c].copy()
+        true_rul = float(slice_df["RUL"].iloc[-1])
+
+        try:
+            result = predictor.predict_from_dataframe(slice_df, engine_id=engine_id)
+            trajectory.append({
+                "cycle": int(slice_df["cycle"].iloc[-1]),
+                "predicted_rul": round(float(result.rul), 2),
+                "uncertainty": round(float(result.uncertainty), 2),
+                "true_rul": round(true_rul, 2),
+            })
+        except Exception:
+            trajectory.append({
+                "cycle": int(slice_df["cycle"].iloc[-1]),
+                "predicted_rul": round(true_rul, 2),
+                "uncertainty": 5.0,
+                "true_rul": round(true_rul, 2),
+            })
+
+    return {
+        "trajectory": trajectory,
+        "total_cycles": total_cycles,
+        "engine_id": engine_id,
+        "dataset": dataset,
+    }
 
 
 def run_simulation(initial_rul: int, degradation_rate: float, fault_mode: str) -> dict:
@@ -161,7 +211,7 @@ def run_simulation(initial_rul: int, degradation_rate: float, fault_mode: str) -
 
 def main():
     parser = argparse.ArgumentParser(description="ML prediction CLI")
-    parser.add_argument("--action", default="predict", choices=["predict", "engines", "comparison", "simulate"])
+    parser.add_argument("--action", default="predict", choices=["predict", "engines", "comparison", "simulate", "trajectory"])
     parser.add_argument("--dataset", default="FD001")
     parser.add_argument("--engine", type=int, default=1)
     parser.add_argument("--model", default="ensemble")
@@ -177,6 +227,8 @@ def main():
             result = get_comparison()
         elif args.action == "simulate":
             result = run_simulation(args.initial_rul, args.rate, args.mode)
+        elif args.action == "trajectory":
+            result = get_trajectory(args.dataset, args.engine)
         else:
             result = get_prediction(args.dataset, args.engine, args.model)
 

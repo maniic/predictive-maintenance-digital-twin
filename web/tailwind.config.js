@@ -5,7 +5,13 @@ module.exports = {
     './components/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontWeight: {
+        300: '300',
+        500: '500',
+        600: '600',
+      },
+    },
   },
   plugins: [],
 }

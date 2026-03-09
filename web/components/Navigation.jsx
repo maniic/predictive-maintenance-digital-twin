@@ -3,33 +3,40 @@
 import Link from 'next/link'
 
 const NAV_ITEMS = [
-  { href: '/prediction', label: 'Predict' },
-  { href: '/simulation', label: 'Simulate' },
-  { href: '/comparison', label: 'Compare' },
+  { href: '/prediction', label: 'Prediction' },
+  { href: '/simulation', label: 'Simulation' },
+  { href: '/comparison', label: 'Comparison' },
 ]
 
 export default function Navigation({ activePage, statusClass = '', onMenuToggle }) {
   return (
-    <header className="border-b border-[var(--border)] px-4 md:px-6 py-4">
-      <div className="max-w-6xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <header className="border-b border-[var(--border)] bg-[var(--bg-surface)]/80 backdrop-blur-sm sticky top-0 z-30">
+      <div className="flex items-center justify-between px-4 md:px-6 h-12">
+        {/* Left: hamburger + logo */}
+        <div className="flex items-center gap-3">
           {onMenuToggle && (
             <button
               onClick={onMenuToggle}
-              className="md:hidden p-2 -ml-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className="md:hidden p-1.5 -ml-1.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 12h18M3 6h18M3 18h18" />
               </svg>
             </button>
           )}
-          <Link href="/" className="flex items-center gap-2">
-            <div className={`status-dot ${statusClass}`} />
-            <span className="mono text-xs tracking-wider">DIGITAL TWIN</span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className={`indicator ${statusClass}`} />
+            <span className="font-condensed text-[0.7rem] font-600 uppercase tracking-[0.15em] text-[var(--text-secondary)]">
+              RUL Monitor
+            </span>
           </Link>
+          <span className="hidden sm:inline font-mono text-[0.6rem] text-[var(--text-faint)] ml-1">
+            v2.1
+          </span>
         </div>
 
-        <nav className="hidden md:flex items-center gap-6">
+        {/* Center: nav links */}
+        <nav className="hidden md:flex items-center gap-8">
           {NAV_ITEMS.map(item => (
             <Link
               key={item.href}
@@ -41,18 +48,16 @@ export default function Navigation({ activePage, statusClass = '', onMenuToggle 
           ))}
         </nav>
 
-        {/* Mobile menu button (fallback when no sidebar hamburger) */}
-        {!onMenuToggle && (
-          <button
-            className="md:hidden p-2"
-            onClick={() => {}}
-            id="mobile-nav-toggle"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        )}
+        {/* Right: system info */}
+        <div className="flex items-center gap-4">
+          <span className="hidden lg:inline font-mono text-[0.6rem] text-[var(--text-faint)]">
+            C-MAPSS / FD001–FD004
+          </span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
+            <span className="font-mono text-[0.6rem] text-[var(--text-muted)]">SYS OK</span>
+          </div>
+        </div>
       </div>
     </header>
   )
