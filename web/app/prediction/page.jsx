@@ -194,8 +194,9 @@ export default function PredictionPage() {
               </div>
             )}
 
-            {/* Results */}
-            {prediction && !prediction.error && !loading && (
+            {/* Results — prediction.error is the numeric error in cycles;
+                backend failures arrive as a string error field */}
+            {prediction && typeof prediction.error !== 'string' && !loading && (
               <div className="space-y-4 animate-fade-up">
                 {/* Primary */}
                 <div className="card p-6 md:p-8">

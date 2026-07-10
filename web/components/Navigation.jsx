@@ -33,6 +33,14 @@ export default function Navigation({ activePage, statusClass = '', onMenuToggle 
           <span className="hidden sm:inline font-mono text-[0.6rem] text-[var(--text-faint)] ml-1">
             v2.1
           </span>
+          {process.env.NEXT_PUBLIC_DEMO_MODE === '1' && (
+            <span
+              className="font-mono text-[0.6rem] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border border-[var(--amber)] text-[var(--amber)] ml-1"
+              title="Hosted demo: precomputed model outputs, no live Python backend"
+            >
+              demo
+            </span>
+          )}
         </div>
 
         {/* Center: nav links */}

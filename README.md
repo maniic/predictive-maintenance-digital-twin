@@ -2,6 +2,8 @@
 
 A deep learning system for predicting Remaining Useful Life (RUL) of turbofan jet engines using the NASA C-MAPSS dataset. Features multiple neural network architectures, ensemble methods, and an interactive web dashboard.
 
+**[▶ Live dashboard demo](https://maniic.github.io/predictive-maintenance-digital-twin/)** — the full dashboard (prediction, degradation simulation, model comparison) hosted on GitHub Pages, running on precomputed model outputs.
+
 ## Results
 
 ### Model Performance on C-MAPSS Dataset
@@ -134,6 +136,17 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+### Hosted demo (GitHub Pages)
+
+The dashboard also builds as a fully static site that needs no Python backend — API calls are replaced by precomputed demo data (`scripts/export_demo_data.py` → `web/public/demo/`), the degradation simulation runs client-side, and a **DEMO** badge is shown in the navigation bar. The included workflow (`.github/workflows/deploy-pages.yml`) builds and deploys it to GitHub Pages on every push to `main`.
+
+To build the static demo locally:
+
+```bash
+cd web
+npm run build:static   # output in web/out/
+```
 
 
 ## Models
