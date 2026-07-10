@@ -30,7 +30,7 @@ export default function Home() {
   }, [])
 
   const statsData = [
-    { value: stats?.modelCount ?? '7', label: 'DL Models', sub: 'LSTM / CNN / Transformer' },
+    { value: stats?.modelCount ?? '9', label: 'DL Models', sub: 'LSTM / CNN / Transformer' },
     { value: stats?.bestRmse ?? '—', label: 'Best RMSE', sub: 'Cycles error (FD001)' },
     { value: '21', label: 'Sensors', sub: 'Temp, pressure, speed' },
     { value: stats?.datasetCount ?? '4', label: 'Datasets', sub: 'FD001 — FD004' },
@@ -77,8 +77,10 @@ export default function Home() {
               Turbofan Engine Prognostics — NASA C-MAPSS
             </h2>
             <p className="text-sm text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed mb-10">
-              Deep learning ensemble for real-time RUL estimation with uncertainty quantification.
-              7 models including LSTM, CNN, Transformer, and weighted ensemble methods.
+              Every flight wears an engine down. This system reads 21 onboard sensors and
+              estimates how many flights remain before maintenance is due — deep learning
+              ensembles (LSTM, CNN, Transformer) with calibrated uncertainty, trained on
+              NASA&apos;s run-to-failure C-MAPSS data.
             </p>
           </div>
 
