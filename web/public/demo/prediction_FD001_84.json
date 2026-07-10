@@ -1,0 +1,1 @@
+{"engine_id": 84, "dataset": "FD001", "model": "ensemble", "rul": 55.76, "uncertainty": 9.44, "health_score": 0.4461, "true_rul": 58.0, "error": -2.24, "individual_predictions": {"lstm": 48.47, "cnn": 56.6, "transformer": 62.21, "ensemble": 55.76}, "total_cycles": 172, "demo": true}
