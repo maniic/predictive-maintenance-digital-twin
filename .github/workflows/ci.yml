@@ -1,8 +1,9 @@
 name: CI
 
 on:
+  # Every branch, not just main: a feature branch gets feedback before a pull
+  # request exists. The concurrency group below cancels superseded runs.
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
