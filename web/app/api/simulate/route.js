@@ -20,10 +20,14 @@ export async function POST(request) {
 function run({ initialRul, degradationRate, faultMode }) {
   return runPython(
     [
-      '--action', 'simulate',
-      '--initial_rul', String(initialRul),
-      '--rate', String(degradationRate),
-      '--mode', faultMode,
+      '--action',
+      'simulate',
+      '--initial_rul',
+      String(initialRul),
+      '--rate',
+      String(degradationRate),
+      '--mode',
+      faultMode,
     ],
     { timeoutMs: TIMEOUT_MS, errorMessage: 'Simulation failed' },
   )

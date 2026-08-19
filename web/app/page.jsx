@@ -11,13 +11,13 @@ export default function Home() {
 
   useEffect(() => {
     fetchComparison()
-      .then(data => {
+      .then((data) => {
         if (!data?.results?.length) return
         const results = data.results
-        const models = new Set(results.map(r => r.model))
-        const datasets = new Set(results.map(r => r.dataset))
+        const models = new Set(results.map((r) => r.model))
+        const datasets = new Set(results.map((r) => r.dataset))
         // Best RMSE across every model and dataset, matching the README badge.
-        const rmses = results.map(r => r.test_rmse).filter(v => typeof v === 'number')
+        const rmses = results.map((r) => r.test_rmse).filter((v) => typeof v === 'number')
         const bestRmse = rmses.length ? Math.min(...rmses) : null
         setStats({
           modelCount: models.size,
@@ -29,7 +29,11 @@ export default function Home() {
   }, [])
 
   const statsData = [
-    { value: stats?.modelCount ?? '9', label: 'DL Models', sub: 'LSTM / CNN / Transformer / attention variants' },
+    {
+      value: stats?.modelCount ?? '9',
+      label: 'DL Models',
+      sub: 'LSTM / CNN / Transformer / attention variants',
+    },
     { value: stats?.bestRmse ?? '—', label: 'Best RMSE', sub: 'Cycles error (best dataset)' },
     { value: '21', label: 'Sensors', sub: 'Temp, pressure, speed' },
     { value: stats?.datasetCount ?? '4', label: 'Datasets', sub: 'FD001 — FD004' },
@@ -47,9 +51,15 @@ export default function Home() {
             </span>
           </div>
           <nav className="flex items-center gap-6">
-            <Link href="/prediction" className="nav-link">Prediction</Link>
-            <Link href="/simulation" className="nav-link">Simulation</Link>
-            <Link href="/comparison" className="nav-link">Comparison</Link>
+            <Link href="/prediction" className="nav-link">
+              Prediction
+            </Link>
+            <Link href="/simulation" className="nav-link">
+              Simulation
+            </Link>
+            <Link href="/comparison" className="nav-link">
+              Comparison
+            </Link>
           </nav>
         </div>
       </header>
@@ -76,10 +86,10 @@ export default function Home() {
               Turbofan Engine Prognostics — NASA C-MAPSS
             </h2>
             <p className="text-sm text-[var(--text-secondary)] max-w-xl mx-auto leading-relaxed mb-10">
-              Every flight wears an engine down. This system reads 21 onboard sensors and
-              estimates how many flights remain before maintenance is due — deep learning
-              ensembles (LSTM, CNN, Transformer) with calibrated uncertainty, trained on
-              NASA&apos;s run-to-failure C-MAPSS data.
+              Every flight wears an engine down. This system reads 21 onboard sensors and estimates
+              how many flights remain before maintenance is due — deep learning ensembles (LSTM,
+              CNN, Transformer) with calibrated uncertainty, trained on NASA&apos;s run-to-failure
+              C-MAPSS data.
             </p>
           </div>
 
@@ -99,12 +109,17 @@ export default function Home() {
           {/* Stats strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px border border-[var(--border)] animate-fade-up-3">
             {statsData.map((stat) => (
-              <div key={stat.label} className="bg-[var(--bg-surface)] p-5 md:p-6 group hover:bg-[var(--bg-raised)] transition-colors">
+              <div
+                key={stat.label}
+                className="bg-[var(--bg-surface)] p-5 md:p-6 group hover:bg-[var(--bg-raised)] transition-colors"
+              >
                 {stats === null && stat.label !== 'Sensors' ? (
                   <>
                     <Skeleton className="h-8 w-12 mb-2" />
                     <div className="data-label mb-1">{stat.label}</div>
-                    <div className="font-mono text-[0.6rem] text-[var(--text-faint)]">{stat.sub}</div>
+                    <div className="font-mono text-[0.6rem] text-[var(--text-faint)]">
+                      {stat.sub}
+                    </div>
                   </>
                 ) : (
                   <>
@@ -112,7 +127,9 @@ export default function Home() {
                       {stat.value}
                     </div>
                     <div className="data-label mb-1">{stat.label}</div>
-                    <div className="font-mono text-[0.6rem] text-[var(--text-faint)]">{stat.sub}</div>
+                    <div className="font-mono text-[0.6rem] text-[var(--text-faint)]">
+                      {stat.sub}
+                    </div>
                   </>
                 )}
               </div>
@@ -141,7 +158,11 @@ export default function Home() {
                 desc: 'Cross-model performance analysis with RMSE, MAE, and asymmetric C-MAPSS scoring.',
               },
             ].map((card) => (
-              <Link key={card.href} href={card.href} className="card p-5 hover:border-[var(--border-light)] transition-all group">
+              <Link
+                key={card.href}
+                href={card.href}
+                className="card p-5 hover:border-[var(--border-light)] transition-all group"
+              >
                 <div className="flex items-center gap-2.5 mb-3">
                   <span className="font-mono text-[0.6rem] px-1.5 py-0.5 bg-[var(--amber-dim)] text-[var(--amber)] rounded-sm">
                     {card.tag}

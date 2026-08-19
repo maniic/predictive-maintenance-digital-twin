@@ -25,7 +25,9 @@ async function getJson(url) {
     try {
       const body = await res.json()
       if (body?.error) message = body.error
-    } catch { /* keep default message */ }
+    } catch {
+      /* keep default message */
+    }
     throw new Error(message)
   }
   return res.json()
@@ -40,7 +42,9 @@ async function withDemoFallback(apiUrl, demoFile) {
   if (!DEMO_MODE) {
     try {
       return await getJson(apiUrl)
-    } catch { /* fall through to demo data */ }
+    } catch {
+      /* fall through to demo data */
+    }
   }
   return demoData(demoFile)
 }
@@ -86,7 +90,9 @@ export async function fetchSimulation(initialRul, degradationRate, faultMode) {
       return await getJson(
         `/api/simulate?initial_rul=${initialRul}&rate=${degradationRate}&mode=${faultMode}`,
       )
-    } catch { /* fall through to client-side simulation */ }
+    } catch {
+      /* fall through to client-side simulation */
+    }
   }
   return simulateLocally(initialRul, degradationRate, faultMode)
 }
@@ -114,7 +120,10 @@ function simulateLocally(initialRul, degradationRate, faultMode) {
       cycle,
       true_rul: trueRul,
       health_score: Math.round(health * 10000) / 10000,
-      predicted_rul: Math.max(0, Math.round((trueRul + (warmedUp ? noise : noise * 2)) * 100) / 100),
+      predicted_rul: Math.max(
+        0,
+        Math.round((trueRul + (warmedUp ? noise : noise * 2)) * 100) / 100,
+      ),
       uncertainty: Math.round((4 + 6 * lifeFrac) * 100) / 100,
     })
     if (trueRul <= 0) break

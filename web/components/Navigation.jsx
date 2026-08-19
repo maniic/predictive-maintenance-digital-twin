@@ -19,7 +19,14 @@ export default function Navigation({ activePage, statusClass = '', onMenuToggle 
               onClick={onMenuToggle}
               className="md:hidden p-1.5 -ml-1.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M3 12h18M3 6h18M3 18h18" />
               </svg>
             </button>
@@ -45,7 +52,7 @@ export default function Navigation({ activePage, statusClass = '', onMenuToggle 
 
         {/* Center: nav links */}
         <nav className="hidden md:flex items-center gap-8">
-          {NAV_ITEMS.map(item => (
+          {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}

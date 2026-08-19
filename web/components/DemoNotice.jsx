@@ -15,8 +15,7 @@ export default function DemoNotice({ children }) {
     <div className="card p-3 mb-5 border-l-2 border-l-[var(--amber)]">
       <p className="font-mono text-[0.65rem] leading-relaxed text-[var(--text-muted)]">
         <span className="text-[var(--amber)]">DEMO </span>
-        {children}{' '}
-        Run it against the real models locally — see the{' '}
+        {children} Run it against the real models locally — see the{' '}
         <a
           href="https://github.com/maniic/predictive-maintenance-digital-twin#reproduce-these-results"
           className="text-[var(--amber)] underline underline-offset-2"

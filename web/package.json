@@ -7,18 +7,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "build:static": "node scripts/build-static.mjs"
+    "build:static": "node scripts/build-static.mjs",
+    "format": "prettier --write \"app/**/*.{js,jsx}\" \"components/**/*.jsx\" \"lib/**/*.js\" \"scripts/**/*.mjs\" \"*.js\"",
+    "format:check": "prettier --check \"app/**/*.{js,jsx}\" \"components/**/*.jsx\" \"lib/**/*.js\" \"scripts/**/*.mjs\" \"*.js\""
   },
   "dependencies": {
     "next": "^14.0.0",
+    "plotly.js": "^2.27.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-plotly.js": "^2.6.0",
-    "plotly.js": "^2.27.0"
+    "react-plotly.js": "^2.6.0"
   },
   "devDependencies": {
-    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.0",
     "postcss": "^8.4.0",
-    "autoprefixer": "^10.4.0"
+    "prettier": "^3.9.6",
+    "tailwindcss": "^3.4.0"
   }
 }

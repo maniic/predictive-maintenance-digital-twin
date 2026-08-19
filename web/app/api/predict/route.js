@@ -19,19 +19,18 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const { dataset = 'FD001', engine = 1, model = 'ensemble', action = 'predict' } =
-    await request.json()
+  const {
+    dataset = 'FD001',
+    engine = 1,
+    model = 'ensemble',
+    action = 'predict',
+  } = await request.json()
   return run({ action, dataset, engine, model })
 }
 
 function run({ action, dataset, engine, model }) {
   return runPython(
-    [
-      '--action', action,
-      '--dataset', dataset,
-      '--engine', String(engine),
-      '--model', model,
-    ],
+    ['--action', action, '--dataset', dataset, '--engine', String(engine), '--model', model],
     { timeoutMs: TIMEOUT_MS, errorMessage: 'Prediction failed' },
   )
 }

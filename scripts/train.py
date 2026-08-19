@@ -3,7 +3,7 @@
 
 Single entry point for every architecture in this project. Replaces the four
 overlapping scripts that preceded it (train_models, train_all_models,
-train_improved_models, train_advanced_models); see docs/models.md for the
+train_improved_models, train_advanced_models); see models/README.md for the
 mapping from each published result row to the settings that produced it.
 
 Usage:

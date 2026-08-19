@@ -53,15 +53,20 @@ export function runPython(args, { timeoutMs = 30000, errorMessage = 'Request fai
       finish({ error: `${errorMessage}: timed out after ${timeoutMs / 1000}s` }, 504)
     }, timeoutMs)
 
-    py.stdout.on('data', (chunk) => { stdout += chunk })
-    py.stderr.on('data', (chunk) => { stderr += chunk })
+    py.stdout.on('data', (chunk) => {
+      stdout += chunk
+    })
+    py.stderr.on('data', (chunk) => {
+      stderr += chunk
+    })
 
     py.on('error', (err) => {
       // ENOENT here means the interpreter itself is missing — the most common
       // local-setup failure, so name it rather than returning a bare 500.
-      const detail = err.code === 'ENOENT'
-        ? `Python interpreter '${pythonBinary()}' not found. Activate the project venv or set PYTHON.`
-        : err.message
+      const detail =
+        err.code === 'ENOENT'
+          ? `Python interpreter '${pythonBinary()}' not found. Activate the project venv or set PYTHON.`
+          : err.message
       finish({ error: detail }, 500)
     })
 
