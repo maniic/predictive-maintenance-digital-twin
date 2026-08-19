@@ -59,11 +59,15 @@ python scripts/predict.py --dataset FD001 --engine 24
   FD001 engine 24
   186 cycles observed
 
-  Predicted RUL   20.4 cycles
+  Predicted RUL   21.3 cycles
+  95% interval    n/a (uncertainty is ensemble spread; only one model loaded)
   True RUL        20 cycles
-  Error           +0.4 cycles
-  Health score    16%
+  Error           +1.3 cycles
+  Health score    17%
 ```
+
+That is real output from a two-minute model — the exact figures move a little
+between runs, since only the data split is seeded.
 
 To reproduce a specific row of the table above:
 
