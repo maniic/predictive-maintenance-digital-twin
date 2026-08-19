@@ -9,10 +9,12 @@ API routes would normally serve into web/public/demo/*.json:
 - prediction_<DS>_<ID>.json        RUL prediction snapshot per sampled engine
 - trajectory_<DS>_<ID>.json        per-cycle RUL trajectory per sampled engine
 
-Ground-truth RUL comes from the real C-MAPSS test files. Model predictions are
-emulated to match each dataset's reported test RMSE (noise around the
-piecewise-linear RUL target), since trained checkpoints are not stored in the
-repo. Payloads are tagged "demo": true and the UI shows a demo badge.
+Ground-truth RUL comes from the real C-MAPSS test files. The predictions are NOT
+model outputs: trained checkpoints are not committed, so each prediction is an
+illustrative value drawn around the piecewise-linear RUL target with noise scaled
+to that dataset's reported test RMSE. Payloads are tagged "demo": true, the nav
+shows a DEMO badge, and the prediction and simulation views carry a banner saying
+so. For real inference, train locally and run scripts/predict.py.
 """
 
 import json
@@ -24,8 +26,9 @@ RAW_DIR = PROJECT_ROOT / "data" / "raw"
 OUT_DIR = PROJECT_ROOT / "web" / "public" / "demo"
 
 DATASETS = ["FD001", "FD002", "FD003", "FD004"]
-# Reported ensemble/best test RMSE per dataset (see README results table)
-DATASET_RMSE = {"FD001": 13.48, "FD002": 16.77, "FD003": 11.71, "FD004": 14.87}
+# Best reported test RMSE per dataset (see the README results table). Used only
+# to scale the illustrative noise, so the demo's error looks like the real one.
+DATASET_RMSE = {"FD001": 13.48, "FD002": 16.77, "FD003": 11.71, "FD004": 14.75}
 RUL_CAP = 125  # piecewise-linear RUL target used during training
 ENGINES_PER_DATASET = 8
 MODELS = ["lstm", "cnn", "transformer", "ensemble"]

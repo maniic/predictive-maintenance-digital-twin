@@ -16,10 +16,9 @@ export default function Home() {
         const results = data.results
         const models = new Set(results.map(r => r.model))
         const datasets = new Set(results.map(r => r.dataset))
-        const fd001 = results.filter(r => r.dataset === 'FD001')
-        const bestRmse = fd001.length
-          ? Math.min(...fd001.map(r => r.test_rmse).filter(Boolean))
-          : null
+        // Best RMSE across every model and dataset, matching the README badge.
+        const rmses = results.map(r => r.test_rmse).filter(v => typeof v === 'number')
+        const bestRmse = rmses.length ? Math.min(...rmses) : null
         setStats({
           modelCount: models.size,
           bestRmse: bestRmse ? bestRmse.toFixed(1) : '—',
@@ -30,8 +29,8 @@ export default function Home() {
   }, [])
 
   const statsData = [
-    { value: stats?.modelCount ?? '9', label: 'DL Models', sub: 'LSTM / CNN / Transformer' },
-    { value: stats?.bestRmse ?? '—', label: 'Best RMSE', sub: 'Cycles error (FD001)' },
+    { value: stats?.modelCount ?? '9', label: 'DL Models', sub: 'LSTM / CNN / Transformer / attention variants' },
+    { value: stats?.bestRmse ?? '—', label: 'Best RMSE', sub: 'Cycles error (best dataset)' },
     { value: '21', label: 'Sensors', sub: 'Temp, pressure, speed' },
     { value: stats?.datasetCount ?? '4', label: 'Datasets', sub: 'FD001 — FD004' },
   ]

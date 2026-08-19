@@ -5,6 +5,7 @@ import Navigation from '../../components/Navigation'
 import Sidebar from '../../components/Sidebar'
 import MetricCard from '../../components/MetricCard'
 import PlotlyChart from '../../components/PlotlyChart'
+import DemoNotice from '../../components/DemoNotice'
 import { fetchEngines, fetchPrediction, fetchTrajectory } from '../../lib/api'
 
 const DATASETS = ['FD001', 'FD002', 'FD003', 'FD004']
@@ -160,6 +161,12 @@ export default function PredictionPage() {
               <div className="data-label mb-1">RUL Prediction</div>
               <h1 className="text-xl md:text-2xl font-300 text-[var(--text-bright)]">Engine Analysis</h1>
             </div>
+
+            <DemoNotice>
+              Engine sensor data and true RUL are real NASA C-MAPSS; the predicted
+              values are illustrative, generated to match the reported test error
+              rather than by running the trained models.
+            </DemoNotice>
 
             {/* Error */}
             {error && (

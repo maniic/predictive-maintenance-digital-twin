@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import Navigation from '../../components/Navigation'
 import Sidebar from '../../components/Sidebar'
 import PlotlyChart from '../../components/PlotlyChart'
-import { fetchSimulation } from '../../lib/api'
+import DemoNotice from '../../components/DemoNotice'
+import { DEMO_MODE, fetchSimulation } from '../../lib/api'
 
 const FAULT_MODES = [
   { value: 'hpc', label: 'HPC Degradation' },
@@ -202,10 +203,19 @@ export default function SimulationPage() {
           <div className="max-w-4xl">
             <div className="mb-6">
               <div className="data-label mb-1">
-                {trajectory ? 'ML-Backed Simulation' : 'Degradation Simulation'}
+                {DEMO_MODE
+                  ? 'Degradation Simulation (Demo)'
+                  : trajectory
+                    ? 'ML-Backed Simulation'
+                    : 'Degradation Simulation'}
               </div>
               <h1 className="text-xl md:text-2xl font-300 text-[var(--text-bright)]">Engine Degradation</h1>
             </div>
+
+            <DemoNotice>
+              This degradation curve is computed in your browser, not by the
+              digital-twin simulator or a trained model.
+            </DemoNotice>
 
             {error && (
               <div className="card p-4 mb-5 border-l-2 border-l-[var(--red)]">
@@ -264,7 +274,9 @@ export default function SimulationPage() {
               <div className="card p-12 text-center">
                 <div className="text-[var(--text-muted)] mb-1">Configure parameters and run simulation</div>
                 <div className="font-mono text-[0.65rem] text-[var(--text-faint)]">
-                  Uses trained ML models for real-time RUL prediction
+                  {DEMO_MODE
+                    ? 'Hosted demo: the degradation curve runs in your browser, not through a trained model'
+                    : 'Uses trained ML models for real-time RUL prediction'}
                 </div>
               </div>
             )}

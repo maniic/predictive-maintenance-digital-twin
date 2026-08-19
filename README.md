@@ -23,7 +23,7 @@ So I built the whole pipeline: data ingestion, seven deep learning architectures
 ## What it does
 
 1. **Ingests run-to-failure sensor data** from NASA's C-MAPSS turbofan dataset: 21 sensors per engine, hundreds of engines, four sub-datasets of increasing difficulty (multiple operating conditions, multiple simultaneous fault modes).
-2. **Trains and evaluates 7 deep learning architectures** on the RUL prediction task: bidirectional LSTM, temporal CNN, Transformer, two Enhanced-LSTM variants with attention, a two-stage health-indicator model, and a weighted ensemble with uncertainty quantification. Experiments are tracked with MLflow.
+2. **Trains and evaluates 7 deep learning architectures** on the RUL prediction task: bidirectional LSTM, temporal CNN, Transformer, two Enhanced-LSTM variants with attention, a two-stage health-indicator model, and a weighted ensemble with uncertainty quantification. Two further variants (attention-LSTM and GRU) were trained on FD001 only and appear on the dashboard's comparison view. Runs are tracked with MLflow when it is installed.
 3. **Serves everything through an interactive dashboard** where you can pick a real test engine and get an RUL estimate with confidence bounds, play back a live degradation simulation, and compare every model's accuracy across all four datasets.
 
 ## Results
@@ -33,9 +33,9 @@ Predictions are measured in **cycles** (one cycle = one flight). Best model per 
 | Dataset | Best Model | RMSE (cycles) | MAE | Operating Conditions | Fault Modes |
 |---------|------------|------|-----|---------------------|-------------|
 | FD001 | LSTM | **13.48** | 9.86 | 1 | 1 (HPC) |
-| FD002 | EnhancedLSTM | **16.77** | 13.76 | 6 | 1 (HPC) |
+| FD002 | EnhancedLSTM-Asymmetric | **16.77** | 13.76 | 6 | 1 (HPC) |
 | FD003 | TwoStage | **11.71** | 7.53 | 1 | 2 (HPC + Fan) |
-| FD004 | LSTM | **14.87** | 9.83 | 6 | 2 (HPC + Fan) |
+| FD004 | EnhancedLSTM-Asymmetric | **14.75** | 9.33 | 6 | 2 (HPC + Fan) |
 
 Put plainly: on the hardest dataset (FD004 — six operating regimes, two simultaneous fault modes), the model predicts an engine's remaining life to within about **15 flights** on average.
 
@@ -123,22 +123,22 @@ Every model, every dataset, side by side: RMSE, MAE, and the asymmetric C-MAPSS 
  700+ engines      →   min-max normalization            →   • local: live PyTorch
  run-to-failure        RUL capped at 125 (piecewise)          inference via Python
  4 sub-datasets        7 architectures, PyTorch Lightning     • hosted: static build
-                       MLflow experiment tracking             on GitHub Pages
+                       optional MLflow tracking               on GitHub Pages
 ```
 
 - **Sequence modeling**: each prediction sees the last 30 cycles of all sensors, so the models learn degradation *trends*, not just snapshots.
 - **Piecewise RUL target**: early in life, an engine's sensors say nothing about its distant failure date, so the target is capped at 125 cycles — the standard C-MAPSS practice that stops models from hallucinating precision they can't have.
 - **Ensemble + uncertainty**: the ensemble averages LSTM, CNN, and Transformer predictions and reports their disagreement as an uncertainty estimate, shown as confidence bands in the dashboard.
-- **Two deployment modes**: locally the dashboard calls the real PyTorch models through a Python bridge; the hosted demo is a fully static build running on precomputed outputs (clearly marked with a DEMO badge), deployed automatically by GitHub Actions on every push to `main`.
+- **Two deployment modes**: locally the dashboard calls the real PyTorch models through a Python bridge, once you have trained checkpoints. The hosted demo is a fully static build — real C-MAPSS engine data and ground-truth RUL, with illustrative predictions calibrated to the reported test error rather than live inference, since checkpoints are not committed. It is marked with a DEMO badge and an in-page banner, and deployed by GitHub Actions on every push to `main`.
 
 ## Models
 
 | Model | Idea | Where it wins |
 |-------|------|---------------|
-| LSTM (bidirectional) | 2-layer BiLSTM, hidden 128 | Best all-rounder; wins FD001/FD004 |
+| LSTM (bidirectional) | 2-layer BiLSTM, hidden 128 | Best all-rounder; wins FD001 |
 | Temporal CNN | 4 dilated conv blocks | Fast, competitive baseline |
 | Transformer | 4-layer encoder, 4 heads | Single-condition datasets |
-| EnhancedLSTM (weighted / asymmetric) | Attention + residuals, asymmetric loss penalizing late predictions | Multi-condition datasets (FD002) |
+| EnhancedLSTM (weighted / asymmetric) | Attention + residuals, asymmetric loss penalizing late predictions | Multi-condition datasets; wins FD002 and FD004 |
 | Two-Stage | Autoencoder health indicator → RUL regression | Multi-fault datasets (FD003) |
 | Ensemble | Weighted average + uncertainty | Most robust, powers the dashboard default |
 
@@ -149,19 +149,25 @@ Every model, every dataset, side by side: RMSE, MAE, and the asymmetric C-MAPSS 
 ```bash
 git clone https://github.com/maniic/predictive-maintenance-digital-twin.git
 cd predictive-maintenance-digital-twin
-
-python -m venv .venv
-source .venv/bin/activate    # Windows: .venv\Scripts\activate
 pip install -e .
-
-# Download C-MAPSS from the NASA Prognostics Data Repository into data/raw/
-# https://data.nasa.gov/dataset/cmapss-jet-engine-simulated-data
-
-python scripts/train_all_models.py --datasets FD001            # all models, one dataset
-python scripts/train_all_models.py --models lstm --datasets FD001
 ```
 
-Training behavior (sequence length, normalization, RUL cap, epochs, early stopping) is configured in `config/config.yaml`.
+The C-MAPSS data is committed, so there is nothing to download. Then:
+
+```bash
+python scripts/train.py --quick                    # ~2 min on CPU, ends with a prediction
+python scripts/predict.py --dataset FD001 --engine 24
+```
+
+Everything else is flags on the same entry point:
+
+```bash
+python scripts/train.py --models lstm --datasets FD001
+python scripts/train.py --models all --datasets all        # hours on CPU
+python scripts/train.py --models enhanced-lstm-asymmetric twostage --datasets FD003
+```
+
+Training behavior (sequence length, normalization, RUL cap, epochs, early stopping) is configured in `config/config.yaml`. Optional extras: `pip install -e ".[tracking]"` for MLflow, `".[explain]"` for SHAP, `".[dev]"` for the test suite.
 
 ### Run the dashboard locally (live inference)
 
@@ -191,7 +197,7 @@ The GitHub Actions workflow (`.github/workflows/deploy-pages.yml`) runs this bui
 │   ├── models/           #   LSTM / CNN / Transformer / two-stage / ensemble
 │   ├── digital_twin/     #   Degradation simulator + RUL predictor
 │   └── api/              #   CLI bridge the dashboard calls for live inference
-├── scripts/              # Training entrypoints, demo-data export
+├── scripts/              # train.py, predict.py, fetch_data.py, demo-data export
 ├── config/config.yaml    # Data, preprocessing, and training configuration
 ├── models/               # Training result logs (JSON)
 ├── web/                  # Next.js dashboard (prediction / simulation / comparison)

@@ -1,8 +1,13 @@
 """
 Training Infrastructure for RUL Prediction
 
-PyTorch Lightning trainer wrapper with MLflow integration for
-experiment tracking, model checkpointing, and early stopping.
+PyTorch Lightning trainer wrapper with model checkpointing, early stopping and
+optional MLflow experiment tracking.
+
+MLflow is an optional dependency (`pip install -e ".[tracking]"`). When it is
+not installed, or when `TrainingConfig.use_mlflow` is False, runs are logged to
+CSV under the checkpoint directory instead. Training never fails because a
+tracking server or package is missing.
 """
 
 from dataclasses import dataclass, field
@@ -16,7 +21,7 @@ from pytorch_lightning.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
 )
-from pytorch_lightning.loggers import MLFlowLogger
+from pytorch_lightning.loggers import CSVLogger, Logger, MLFlowLogger
 import torch
 from torch.utils.data import DataLoader
 
@@ -41,10 +46,14 @@ class TrainingConfig:
     checkpoint_dir: str = "models/checkpoints"
     save_top_k: int = 3
     
-    # MLflow
+    # Experiment tracking (MLflow if available, CSV otherwise)
+    use_mlflow: bool = True
     mlflow_tracking_uri: str = "mlruns"
     experiment_name: str = "cmapss-rul-prediction"
     
+    # Optimisation
+    gradient_clip_val: float = 0.0
+
     # Hardware
     accelerator: str = "auto"
     devices: int = 1
@@ -128,12 +137,29 @@ class RULTrainer:
         
         return callbacks
     
-    def _create_logger(self, run_name: Optional[str] = None) -> MLFlowLogger:
-        """Create MLflow logger for experiment tracking."""
-        return MLFlowLogger(
-            experiment_name=self.config.experiment_name,
-            tracking_uri=self.config.mlflow_tracking_uri,
-            run_name=run_name,
+    def _create_logger(self, run_name: Optional[str] = None) -> Logger:
+        """Create an experiment logger, preferring MLflow when it is installed.
+
+        Falls back to a CSV logger so that a missing optional dependency never
+        stops a training run.
+        """
+        if self.config.use_mlflow:
+            try:
+                return MLFlowLogger(
+                    experiment_name=self.config.experiment_name,
+                    tracking_uri=self.config.mlflow_tracking_uri,
+                    run_name=run_name,
+                )
+            except ModuleNotFoundError:
+                print(
+                    "  MLflow not installed - logging to CSV instead "
+                    '(pip install -e ".[tracking]" to enable MLflow).'
+                )
+
+        return CSVLogger(
+            save_dir=self.config.checkpoint_dir,
+            name=self.config.experiment_name,
+            version=run_name,
         )
     
     def _create_trainer(self, run_name: Optional[str] = None) -> pl.Trainer:
@@ -147,6 +173,7 @@ class RULTrainer:
             precision=self.config.precision,
             callbacks=self._create_callbacks(),
             logger=self._logger,
+            gradient_clip_val=self.config.gradient_clip_val,
             enable_progress_bar=True,
             log_every_n_steps=10,
             deterministic=True,

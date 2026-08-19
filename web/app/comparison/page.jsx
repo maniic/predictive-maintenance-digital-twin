@@ -55,8 +55,13 @@ export default function ComparisonPage() {
       ? data.results
       : data.results.filter(r => r.dataset === selectedDataset)
     results = [...results].sort((a, b) => {
-      const aVal = a[sortBy] || 0
-      const bVal = b[sortBy] || 0
+      // Rows can legitimately lack a metric (see models/README.md on the
+      // C-MAPSS score). Sink those instead of scoring them as zero.
+      const aMissing = a[sortBy] == null
+      const bMissing = b[sortBy] == null
+      if (aMissing || bMissing) return aMissing === bMissing ? 0 : aMissing ? 1 : -1
+      const aVal = a[sortBy]
+      const bVal = b[sortBy]
       return sortAsc ? aVal - bVal : bVal - aVal
     })
     return results
@@ -114,12 +119,20 @@ export default function ComparisonPage() {
     const dsResults = data.results.filter(r => r.dataset === selectedDataset)
     if (dsResults.length < 2) return null
 
-    const metricKeys = ['test_rmse', 'test_mae', 'test_cmapss']
-    const metricLabels = ['RMSE', 'MAE', 'Score']
+    // Only chart axes every model in this dataset actually reports, so a
+    // missing metric cannot masquerade as a zero.
+    const allKeys = [
+      ['test_rmse', 'RMSE'],
+      ['test_mae', 'MAE'],
+      ['test_cmapss', 'Score'],
+    ].filter(([k]) => dsResults.every(r => r[k] != null))
+    if (allKeys.length < 2) return null
+    const metricKeys = allKeys.map(([k]) => k)
+    const metricLabels = allKeys.map(([, label]) => label)
 
     // Normalize each metric to 0-1 (inverted so lower=better=outer)
-    const maxVals = metricKeys.map(k => Math.max(...dsResults.map(r => r[k] || 0)))
-    const minVals = metricKeys.map(k => Math.min(...dsResults.map(r => r[k] || 0)))
+    const maxVals = metricKeys.map(k => Math.max(...dsResults.map(r => r[k])))
+    const minVals = metricKeys.map(k => Math.min(...dsResults.map(r => r[k])))
 
     return dsResults.map((r, i) => {
       const vals = metricKeys.map((k, mi) => {
@@ -339,8 +352,13 @@ export default function ComparisonPage() {
                         <td className="px-4 py-3 text-[var(--text-muted)]">{r.dataset}</td>
                         <td className="px-4 py-3 text-right">{r.test_rmse?.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right">{r.test_mae?.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-right text-[var(--text-muted)]">
-                          {r.test_cmapss?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        <td
+                          className="px-4 py-3 text-right text-[var(--text-muted)]"
+                          title={r.test_cmapss == null ? 'Not reported for this run — see models/README.md' : undefined}
+                        >
+                          {r.test_cmapss == null
+                            ? '—'
+                            : r.test_cmapss.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </td>
                         <td className="px-4 py-3 text-right text-[var(--text-muted)]">
                           {r.epochs ?? '—'}

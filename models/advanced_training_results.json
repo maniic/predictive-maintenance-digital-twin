@@ -3,7 +3,7 @@
     "model": "EnhancedLSTM-Weighted",
     "test_rmse": 14.64671802520752,
     "test_mae": 11.001714706420898,
-    "test_cmapss": 51074.5625,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 2.5910046100616455,
       "20-50": 7.529730319976807,
@@ -16,7 +16,7 @@
     "model": "EnhancedLSTM-Asymmetric",
     "test_rmse": 15.408551216125488,
     "test_mae": 11.11556339263916,
-    "test_cmapss": 76784.5,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 2.537909746170044,
       "20-50": 6.821832180023193,
@@ -29,7 +29,7 @@
     "model": "TwoStage",
     "test_rmse": 14.014760971069336,
     "test_mae": 10.169986724853516,
-    "test_cmapss": 41848.44140625,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 2.9885330200195312,
       "20-50": 6.5477519035339355,
@@ -42,7 +42,7 @@
     "model": "EnhancedLSTM-Weighted",
     "test_rmse": 16.944286346435547,
     "test_mae": 13.711455345153809,
-    "test_cmapss": 195400.125,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 3.927510976791382,
       "20-50": 8.926403045654297,
@@ -55,7 +55,7 @@
     "model": "EnhancedLSTM-Asymmetric",
     "test_rmse": 16.76959228515625,
     "test_mae": 13.764565467834473,
-    "test_cmapss": 164163.40625,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 6.205263137817383,
       "20-50": 10.935291290283203,
@@ -68,7 +68,7 @@
     "model": "TwoStage",
     "test_rmse": 17.49712371826172,
     "test_mae": 13.483710289001465,
-    "test_cmapss": 262814.03125,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 5.546408176422119,
       "20-50": 9.21734619140625,
@@ -81,7 +81,7 @@
     "model": "EnhancedLSTM-Weighted",
     "test_rmse": 13.384170532226562,
     "test_mae": 8.85801887512207,
-    "test_cmapss": 60674.5546875,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 2.9484314918518066,
       "20-50": 5.927211284637451,
@@ -94,7 +94,7 @@
     "model": "EnhancedLSTM-Asymmetric",
     "test_rmse": 11.999693870544434,
     "test_mae": 8.165519714355469,
-    "test_cmapss": 38779.69921875,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 3.3753678798675537,
       "20-50": 5.536165714263916,
@@ -107,7 +107,7 @@
     "model": "TwoStage",
     "test_rmse": 11.708575248718262,
     "test_mae": 7.530930519104004,
-    "test_cmapss": 36411.3046875,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 2.8069660663604736,
       "20-50": 4.762877464294434,
@@ -120,7 +120,7 @@
     "model": "EnhancedLSTM-Weighted",
     "test_rmse": 17.185972213745117,
     "test_mae": 12.9580717086792,
-    "test_cmapss": 3952815.25,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 5.182812690734863,
       "20-50": 12.63029956817627,
@@ -133,7 +133,7 @@
     "model": "EnhancedLSTM-Asymmetric",
     "test_rmse": 14.748513221740723,
     "test_mae": 9.334869384765625,
-    "test_cmapss": 1795535.5,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 7.061793327331543,
       "20-50": 13.785324096679688,
@@ -146,7 +146,7 @@
     "model": "TwoStage",
     "test_rmse": 16.681394577026367,
     "test_mae": 9.809274673461914,
-    "test_cmapss": 2353698.5,
+    "test_cmapss": null,
     "range_maes": {
       "0-20": 11.767745018005371,
       "20-50": 17.54503059387207,

@@ -4,7 +4,9 @@
  * Next.js cannot statically export dynamic route handlers, so the app/api
  * directory (which shells out to the Python backend) is moved aside for the
  * duration of the build and restored afterwards. The exported site runs
- * entirely on precomputed demo data (see ../scripts/export_demo_data.py).
+ * entirely on the demo payloads in public/demo (see ../scripts/export_demo_data.py):
+ * real C-MAPSS engine data and ground-truth RUL, with illustrative predictions
+ * calibrated to each dataset's reported test error rather than live inference.
  *
  * Usage: node scripts/build-static.mjs
  * Env:   NEXT_PUBLIC_BASE_PATH  e.g. /predictive-maintenance-digital-twin

@@ -1,45 +1,37 @@
-import { spawn } from 'child_process'
-import path from 'path'
+import { runPython } from '../../../lib/python'
 
-const PROCESS_TIMEOUT_MS = 30000
+const TIMEOUT_MS = 30000
+
+/**
+ * GET /api/predict?dataset=FD001&engine=9&model=ensemble
+ * GET /api/predict?action=trajectory&dataset=FD001&engine=9
+ *
+ * GET is what the dashboard client sends; POST is kept for scripted callers.
+ */
+export async function GET(request) {
+  const { searchParams } = new URL(request.url)
+  return run({
+    action: searchParams.get('action') === 'trajectory' ? 'trajectory' : 'predict',
+    dataset: searchParams.get('dataset') || 'FD001',
+    engine: searchParams.get('engine') || '1',
+    model: searchParams.get('model') || 'ensemble',
+  })
+}
 
 export async function POST(request) {
-  const { dataset = 'FD001', engine = 1, model = 'ensemble' } = await request.json()
+  const { dataset = 'FD001', engine = 1, model = 'ensemble', action = 'predict' } =
+    await request.json()
+  return run({ action, dataset, engine, model })
+}
 
-  const projectRoot = path.resolve(process.cwd(), '..')
-
-  return new Promise((resolve) => {
-    const py = spawn('python', [
-      'src/api/predict.py',
-      '--action', 'predict',
+function run({ action, dataset, engine, model }) {
+  return runPython(
+    [
+      '--action', action,
       '--dataset', dataset,
       '--engine', String(engine),
       '--model', model,
-    ], { cwd: projectRoot })
-
-    let stdout = ''
-    let stderr = ''
-
-    const timer = setTimeout(() => {
-      py.kill('SIGTERM')
-      resolve(Response.json({ error: 'Prediction timed out' }, { status: 504 }))
-    }, PROCESS_TIMEOUT_MS)
-
-    py.stdout.on('data', (data) => { stdout += data })
-    py.stderr.on('data', (data) => { stderr += data })
-
-    py.on('close', (code) => {
-      clearTimeout(timer)
-      if (code !== 0) {
-        resolve(Response.json({ error: 'Prediction failed' }, { status: 500 }))
-      } else {
-        try {
-          const result = JSON.parse(stdout)
-          resolve(Response.json(result))
-        } catch {
-          resolve(Response.json({ error: 'Invalid response' }, { status: 500 }))
-        }
-      }
-    })
-  })
+    ],
+    { timeoutMs: TIMEOUT_MS, errorMessage: 'Prediction failed' },
+  )
 }

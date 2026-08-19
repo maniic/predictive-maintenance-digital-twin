@@ -36,7 +36,7 @@ export default function Navigation({ activePage, statusClass = '', onMenuToggle 
           {process.env.NEXT_PUBLIC_DEMO_MODE === '1' && (
             <span
               className="font-mono text-[0.6rem] uppercase tracking-wider px-1.5 py-0.5 rounded-sm border border-[var(--amber)] text-[var(--amber)] ml-1"
-              title="Hosted demo: precomputed model outputs, no live Python backend"
+              title="Hosted demo: real C-MAPSS ground truth, illustrative predictions calibrated to the reported test error. No live model."
             >
               demo
             </span>
