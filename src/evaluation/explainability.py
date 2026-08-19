@@ -7,7 +7,7 @@ Provides tools for understanding model predictions:
 - Sensor contribution analysis
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
 
@@ -29,6 +29,7 @@ class FeatureImportance:
         importance_std: Standard deviation of SHAP values
         shap_values: Raw SHAP values matrix (samples x features)
     """
+
     feature_names: list[str]
     importance_mean: np.ndarray
     importance_std: np.ndarray
@@ -44,13 +45,21 @@ class FeatureImportance:
             List of (feature_name, importance) tuples sorted by importance
         """
         # Flatten if 2D (e.g., from non-aggregated time)
-        importance = self.importance_mean.flatten() if self.importance_mean.ndim > 1 else self.importance_mean
+        importance = (
+            self.importance_mean.flatten()
+            if self.importance_mean.ndim > 1
+            else self.importance_mean
+        )
         indices = np.argsort(importance)[::-1][:n]
         return [(self.feature_names[int(i)], float(importance[int(i)])) for i in indices]
 
     def to_dict(self) -> dict[str, float]:
         """Convert to dictionary mapping feature names to importance."""
-        importance = self.importance_mean.flatten() if self.importance_mean.ndim > 1 else self.importance_mean
+        importance = (
+            self.importance_mean.flatten()
+            if self.importance_mean.ndim > 1
+            else self.importance_mean
+        )
         return dict(zip(self.feature_names, importance.tolist()))
 
 
@@ -63,6 +72,7 @@ class AttentionAnalysis:
         timestep_importance: Mean attention per timestep
         peak_timesteps: Indices of highest attention timesteps
     """
+
     weights: np.ndarray
     timestep_importance: np.ndarray
     peak_timesteps: np.ndarray
@@ -78,6 +88,7 @@ class SensorContribution:
         contribution_std: Standard deviation of contributions
         temporal_contributions: Contributions over time (sensors x timesteps)
     """
+
     sensor_names: list[str]
     contributions: np.ndarray
     contribution_std: np.ndarray
@@ -184,7 +195,6 @@ class RULExplainer:
         Returns:
             FeatureImportance with per-feature importance scores
         """
-        import shap
 
         # Ensure data requires grad for SHAP gradient computation
         data = data.to(self.device).requires_grad_(True)
@@ -459,7 +469,8 @@ class RULExplainer:
         y_pos = np.arange(len(names))
 
         ax.barh(
-            y_pos, values,
+            y_pos,
+            values,
             xerr=errors,
             color="teal",
             edgecolor="darkcyan",
@@ -568,9 +579,9 @@ class RULExplainer:
 
         if attention_weights is not None:
             result["attention_weights"] = attention_weights.cpu().numpy()[0].tolist()
-            result["peak_attention_timesteps"] = (
-                np.argsort(attention_weights.cpu().numpy()[0])[::-1][:5].tolist()
-            )
+            result["peak_attention_timesteps"] = np.argsort(attention_weights.cpu().numpy()[0])[
+                ::-1
+            ][:5].tolist()
 
         return result
 
@@ -599,7 +610,7 @@ def create_shap_summary_plot(
     data = data.to(device)
 
     if background_data is None:
-        background_data = data[:min(100, len(data))]
+        background_data = data[: min(100, len(data))]
     else:
         background_data = background_data.to(device)
 

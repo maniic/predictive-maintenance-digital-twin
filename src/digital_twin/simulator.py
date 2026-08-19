@@ -4,29 +4,29 @@ Degradation Simulator for Digital Twin
 Simulates realistic sensor degradation patterns calibrated from actual C-MAPSS data.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
 from typing import Optional
 
 import numpy as np
-import pandas as pd
 
 
 class FaultMode(Enum):
     """Fault modes from C-MAPSS dataset."""
-    HPC_DEGRADATION = "hpc"      # High Pressure Compressor
-    FAN_DEGRADATION = "fan"      # Fan degradation
-    COMBINED = "combined"        # Both fault modes
+
+    HPC_DEGRADATION = "hpc"  # High Pressure Compressor
+    FAN_DEGRADATION = "fan"  # Fan degradation
+    COMBINED = "combined"  # Both fault modes
 
 
 @dataclass
 class DegradationConfig:
     """Configuration for degradation simulation."""
+
     fault_mode: FaultMode = FaultMode.HPC_DEGRADATION
-    degradation_rate: float = 1.0   # Multiplier (1.0 = normal, 2.0 = 2x faster)
-    noise_level: float = 1.0        # Noise multiplier (1.0 = realistic)
-    initial_rul: int = 150          # Starting RUL
+    degradation_rate: float = 1.0  # Multiplier (1.0 = normal, 2.0 = 2x faster)
+    noise_level: float = 1.0  # Noise multiplier (1.0 = realistic)
+    initial_rul: int = 150  # Starting RUL
     random_seed: Optional[int] = None
 
 
@@ -35,84 +35,154 @@ class DegradationConfig:
 CALIBRATED_SENSOR_PROFILES = {
     # Sensors that INCREASE with degradation (higher values = more degraded)
     "sensor_2": {
-        "baseline": 642.68, "std": 0.50,
-        "healthy_range": (641.21, 643.80), "degraded_range": (642.22, 644.53),
-        "direction": 1
+        "baseline": 642.68,
+        "std": 0.50,
+        "healthy_range": (641.21, 643.80),
+        "degraded_range": (642.22, 644.53),
+        "direction": 1,
     },
     "sensor_3": {
-        "baseline": 1590.52, "std": 6.13,
-        "healthy_range": (1571.04, 1605.29), "degraded_range": (1587.85, 1616.91),
-        "direction": 1
+        "baseline": 1590.52,
+        "std": 6.13,
+        "healthy_range": (1571.04, 1605.29),
+        "degraded_range": (1587.85, 1616.91),
+        "direction": 1,
     },
     "sensor_4": {
-        "baseline": 1408.93, "std": 9.00,
-        "healthy_range": (1382.25, 1423.02), "degraded_range": (1407.36, 1441.49),
-        "direction": 1
+        "baseline": 1408.93,
+        "std": 9.00,
+        "healthy_range": (1382.25, 1423.02),
+        "degraded_range": (1407.36, 1441.49),
+        "direction": 1,
     },
     "sensor_8": {
-        "baseline": 2388.10, "std": 0.07,
-        "healthy_range": (2387.90, 2388.24), "degraded_range": (2388.03, 2388.56),
-        "direction": 1
+        "baseline": 2388.10,
+        "std": 0.07,
+        "healthy_range": (2387.90, 2388.24),
+        "degraded_range": (2388.03, 2388.56),
+        "direction": 1,
     },
     "sensor_9": {
-        "baseline": 9065.24, "std": 22.08,
-        "healthy_range": (9031.97, 9088.71), "degraded_range": (9021.73, 9244.59),
-        "direction": 1
+        "baseline": 9065.24,
+        "std": 22.08,
+        "healthy_range": (9031.97, 9088.71),
+        "degraded_range": (9021.73, 9244.59),
+        "direction": 1,
     },
     "sensor_11": {
-        "baseline": 47.54, "std": 0.27,
-        "healthy_range": (46.85, 47.91), "degraded_range": (47.49, 48.53),
-        "direction": 1
+        "baseline": 47.54,
+        "std": 0.27,
+        "healthy_range": (46.85, 47.91),
+        "degraded_range": (47.49, 48.53),
+        "direction": 1,
     },
     "sensor_13": {
-        "baseline": 2388.10, "std": 0.07,
-        "healthy_range": (2387.89, 2388.24), "degraded_range": (2388.00, 2388.56),
-        "direction": 1
+        "baseline": 2388.10,
+        "std": 0.07,
+        "healthy_range": (2387.89, 2388.24),
+        "degraded_range": (2388.00, 2388.56),
+        "direction": 1,
     },
     "sensor_14": {
-        "baseline": 8143.75, "std": 19.08,
-        "healthy_range": (8114.50, 8164.66), "degraded_range": (8099.94, 8293.72),
-        "direction": 1
+        "baseline": 8143.75,
+        "std": 19.08,
+        "healthy_range": (8114.50, 8164.66),
+        "degraded_range": (8099.94, 8293.72),
+        "direction": 1,
     },
     "sensor_15": {
-        "baseline": 8.44, "std": 0.04,
-        "healthy_range": (8.32, 8.51), "degraded_range": (8.43, 8.58),
-        "direction": 1
+        "baseline": 8.44,
+        "std": 0.04,
+        "healthy_range": (8.32, 8.51),
+        "degraded_range": (8.43, 8.58),
+        "direction": 1,
     },
     "sensor_17": {
-        "baseline": 393.21, "std": 1.55,
-        "healthy_range": (388.00, 396.00), "degraded_range": (392.00, 400.00),
-        "direction": 1
+        "baseline": 393.21,
+        "std": 1.55,
+        "healthy_range": (388.00, 396.00),
+        "degraded_range": (392.00, 400.00),
+        "direction": 1,
     },
     # Sensors that DECREASE with degradation (lower values = more degraded)
     "sensor_7": {
-        "baseline": 553.37, "std": 0.89,
-        "healthy_range": (551.82, 556.06), "degraded_range": (549.85, 554.07),
-        "direction": -1
+        "baseline": 553.37,
+        "std": 0.89,
+        "healthy_range": (551.82, 556.06),
+        "degraded_range": (549.85, 554.07),
+        "direction": -1,
     },
     "sensor_12": {
-        "baseline": 521.41, "std": 0.74,
-        "healthy_range": (520.19, 523.38), "degraded_range": (518.69, 521.63),
-        "direction": -1
+        "baseline": 521.41,
+        "std": 0.74,
+        "healthy_range": (520.19, 523.38),
+        "degraded_range": (518.69, 521.63),
+        "direction": -1,
     },
     "sensor_20": {
-        "baseline": 38.82, "std": 0.18,
-        "healthy_range": (38.42, 39.43), "degraded_range": (38.14, 38.96),
-        "direction": -1
+        "baseline": 38.82,
+        "std": 0.18,
+        "healthy_range": (38.42, 39.43),
+        "degraded_range": (38.14, 38.96),
+        "direction": -1,
     },
     "sensor_21": {
-        "baseline": 23.29, "std": 0.11,
-        "healthy_range": (23.05, 23.62), "degraded_range": (22.89, 23.37),
-        "direction": -1
+        "baseline": 23.29,
+        "std": 0.11,
+        "healthy_range": (23.05, 23.62),
+        "degraded_range": (22.89, 23.37),
+        "direction": -1,
     },
     # Near-constant sensors (minimal variation, kept for compatibility)
-    "sensor_1": {"baseline": 518.67, "std": 0.0, "healthy_range": (518.67, 518.67), "degraded_range": (518.67, 518.67), "direction": 0},
-    "sensor_5": {"baseline": 14.62, "std": 0.0, "healthy_range": (14.62, 14.62), "degraded_range": (14.62, 14.62), "direction": 0},
-    "sensor_6": {"baseline": 21.61, "std": 0.0, "healthy_range": (21.61, 21.61), "degraded_range": (21.61, 21.61), "direction": 0},
-    "sensor_10": {"baseline": 1.30, "std": 0.0, "healthy_range": (1.30, 1.30), "degraded_range": (1.30, 1.30), "direction": 0},
-    "sensor_16": {"baseline": 0.03, "std": 0.0, "healthy_range": (0.03, 0.03), "degraded_range": (0.03, 0.03), "direction": 0},
-    "sensor_18": {"baseline": 2388.0, "std": 0.0, "healthy_range": (2388.0, 2388.0), "degraded_range": (2388.0, 2388.0), "direction": 0},
-    "sensor_19": {"baseline": 100.0, "std": 0.0, "healthy_range": (100.0, 100.0), "degraded_range": (100.0, 100.0), "direction": 0},
+    "sensor_1": {
+        "baseline": 518.67,
+        "std": 0.0,
+        "healthy_range": (518.67, 518.67),
+        "degraded_range": (518.67, 518.67),
+        "direction": 0,
+    },
+    "sensor_5": {
+        "baseline": 14.62,
+        "std": 0.0,
+        "healthy_range": (14.62, 14.62),
+        "degraded_range": (14.62, 14.62),
+        "direction": 0,
+    },
+    "sensor_6": {
+        "baseline": 21.61,
+        "std": 0.0,
+        "healthy_range": (21.61, 21.61),
+        "degraded_range": (21.61, 21.61),
+        "direction": 0,
+    },
+    "sensor_10": {
+        "baseline": 1.30,
+        "std": 0.0,
+        "healthy_range": (1.30, 1.30),
+        "degraded_range": (1.30, 1.30),
+        "direction": 0,
+    },
+    "sensor_16": {
+        "baseline": 0.03,
+        "std": 0.0,
+        "healthy_range": (0.03, 0.03),
+        "degraded_range": (0.03, 0.03),
+        "direction": 0,
+    },
+    "sensor_18": {
+        "baseline": 2388.0,
+        "std": 0.0,
+        "healthy_range": (2388.0, 2388.0),
+        "degraded_range": (2388.0, 2388.0),
+        "direction": 0,
+    },
+    "sensor_19": {
+        "baseline": 100.0,
+        "std": 0.0,
+        "healthy_range": (100.0, 100.0),
+        "degraded_range": (100.0, 100.0),
+        "direction": 0,
+    },
 }
 
 # FD001 operating conditions (single condition)
@@ -320,9 +390,7 @@ def calibrate_from_data(data_path: str = "data/raw", dataset: str = "FD001") -> 
 
     for sensor in sensor_cols:
         healthy_mean = healthy_df[sensor].mean()
-        healthy_std = healthy_df[sensor].std()
         degraded_mean = degraded_df[sensor].mean()
-        degraded_std = degraded_df[sensor].std()
 
         direction = 1 if degraded_mean > healthy_mean else -1 if degraded_mean < healthy_mean else 0
 

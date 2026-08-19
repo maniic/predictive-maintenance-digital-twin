@@ -62,4 +62,6 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
-ignore = ["E501"]
+# E501: line length is handled by the formatter.
+# N812: `import torch.nn.functional as F` is the universal PyTorch convention.
+ignore = ["E501", "N812"]

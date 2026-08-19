@@ -25,7 +25,7 @@ class TemporalAttention(nn.Module):
         self.key = nn.Linear(hidden_size, hidden_size)
         self.value = nn.Linear(hidden_size, hidden_size)
 
-        self.scale = hidden_size ** -0.5
+        self.scale = hidden_size**-0.5
         self.dropout = nn.Dropout(dropout)
 
         # Learnable query for final prediction

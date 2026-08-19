@@ -16,9 +16,10 @@ class OperatingConditions:
 
     Maps to C-MAPSS operational settings.
     """
-    altitude: float = 0.0          # setting_1
-    mach_number: float = 0.0       # setting_2
-    throttle_resolver: float = 0.0 # setting_3
+
+    altitude: float = 0.0  # setting_1
+    mach_number: float = 0.0  # setting_2
+    throttle_resolver: float = 0.0  # setting_3
 
 
 @dataclass
@@ -35,6 +36,7 @@ class EngineState:
         health_score: Overall health score (0.0 = failed, 1.0 = healthy)
         timestamp: When this state was recorded
     """
+
     engine_id: str
     cycle: int
     operating_conditions: OperatingConditions
@@ -96,6 +98,7 @@ class EngineHistory:
 
     Maintains a sliding window of recent states.
     """
+
     engine_id: str
     max_length: int = 500
     _states: list[EngineState] = field(default_factory=list)
@@ -105,7 +108,7 @@ class EngineHistory:
         self._states.append(state)
         # Trim if over max length
         if len(self._states) > self.max_length:
-            self._states = self._states[-self.max_length:]
+            self._states = self._states[-self.max_length :]
 
     def get_recent(self, n: Optional[int] = None) -> list[EngineState]:
         """Get n most recent states."""

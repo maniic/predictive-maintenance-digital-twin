@@ -233,9 +233,7 @@ def prepare_data(dataset: str, args, config_path: Path):
             f"{ds_config.sequence_length} cycles and are excluded from evaluation"
         )
 
-    print(
-        f"  Sequences: {len(train_ds):,} train, {len(val_ds):,} val, {len(test_ds):,} test"
-    )
+    print(f"  Sequences: {len(train_ds):,} train, {len(val_ds):,} val, {len(test_ds):,} test")
     return train_ds, val_ds, test_ds, feature_cols, ds_config, preprocessor, excluded
 
 
@@ -364,9 +362,7 @@ def build_ensemble(dataset: str, member_results: dict, test_ds, args) -> dict:
     ensemble._update_weights({n: v / total for n, v in inv.items()})
     print(f"  Weights: { {k: round(v, 3) for k, v in ensemble.weight_dict.items()} }")
 
-    metrics = evaluate(
-        ensemble, DataLoader(test_ds, batch_size=args.batch_size), ensemble=True
-    )
+    metrics = evaluate(ensemble, DataLoader(test_ds, batch_size=args.batch_size), ensemble=True)
     print(f"  RMSE {metrics['test_rmse']:.2f} | MAE {metrics['test_mae']:.2f}")
 
     return {
@@ -395,7 +391,9 @@ def show_example_prediction(dataset: str, args) -> None:
         f"RUL {result['rul']:.1f} +/- {result['uncertainty']:.1f} cycles "
         f"(true {result['true_rul']:.0f})"
     )
-    print(f"\n  Reproduce: python scripts/predict.py --dataset {dataset} --engine {result['engine_id']}")
+    print(
+        f"\n  Reproduce: python scripts/predict.py --dataset {dataset} --engine {result['engine_id']}"
+    )
 
 
 def main() -> int:
@@ -416,7 +414,9 @@ def main() -> int:
         help="FD001..FD004, or 'all' (default: FD001)",
     )
     parser.add_argument("--epochs", type=int, default=None, help="override max epochs")
-    parser.add_argument("--patience", type=int, default=None, help="override early-stopping patience")
+    parser.add_argument(
+        "--patience", type=int, default=None, help="override early-stopping patience"
+    )
     parser.add_argument("--lr", type=float, default=None, help="override learning rate")
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--sequence-length", type=int, default=30)
@@ -461,7 +461,9 @@ def main() -> int:
     device = (
         f"CUDA ({torch.cuda.get_device_name(0)})"
         if torch.cuda.is_available()
-        else "MPS" if torch.backends.mps.is_available() else "CPU"
+        else "MPS"
+        if torch.backends.mps.is_available()
+        else "CPU"
     )
     print(f"Device:   {device}")
 
@@ -472,7 +474,9 @@ def main() -> int:
             dataset, args, args.config
         )
 
-        preprocessor_path = PROJECT_ROOT / "models" / "preprocessors" / f"{dataset}_preprocessor.pkl"
+        preprocessor_path = (
+            PROJECT_ROOT / "models" / "preprocessors" / f"{dataset}_preprocessor.pkl"
+        )
         preprocessor_path.parent.mkdir(parents=True, exist_ok=True)
         preprocessor.save(preprocessor_path)
         print(f"  Preprocessor saved to {preprocessor_path.relative_to(PROJECT_ROOT)}")
