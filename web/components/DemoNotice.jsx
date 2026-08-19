@@ -19,7 +19,7 @@ export default function DemoNotice({ children }) {
         Run it against the real models locally — see the{' '}
         <a
           href="https://github.com/maniic/predictive-maintenance-digital-twin#reproduce-these-results"
-          className="text-[var(--accent)] underline underline-offset-2"
+          className="text-[var(--amber)] underline underline-offset-2"
           target="_blank"
           rel="noreferrer"
         >

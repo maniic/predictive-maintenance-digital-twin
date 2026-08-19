@@ -1,153 +1,123 @@
-# Digital Twin Dashboard
+# Dashboard
 
-Next.js web application for the Predictive Maintenance Digital Twin system. Provides real-time RUL (Remaining Useful Life) predictions for turbofan engines using deep learning models.
+Next.js app for the Predictive Maintenance Digital Twin: RUL predictions on real
+C-MAPSS test engines, a degradation simulation, and a model comparison view.
 
-## Tech Stack
+It runs in two modes.
 
-- **Next.js 14** - React framework with App Router
-- **Tailwind CSS** - Utility-first styling
-- **Plotly.js** - Interactive charts and visualizations
-- **Python Backend** - ML model inference via subprocess
+| | Full mode (local) | Demo mode (hosted) |
+|---|---|---|
+| Where | `npm run dev` on your machine | GitHub Pages |
+| Predictions | Real PyTorch inference through a Python subprocess | Illustrative values from `public/demo/*.json` |
+| Simulation | `DegradationSimulator` + trained models | An equivalent curve computed in the browser |
+| Needs | Python env, trained checkpoints | Nothing |
 
-## Features
+Demo mode is what the deployed site runs, because GitHub Pages has no Python
+backend and this repository does not commit trained checkpoints. The engine data
+and ground-truth RUL in those payloads are real C-MAPSS; the *predictions* are
+generated to match each dataset's reported test error. The nav carries a `DEMO`
+badge and the prediction and simulation views carry a banner saying so.
 
-- **Prediction** - Run RUL predictions on C-MAPSS dataset engines with multiple models
-- **Simulation** - Real-time engine degradation simulation with live RUL updates
-- **Comparison** - Compare model performance across datasets (RMSE, MAE, C-MAPSS Score)
+Full mode also falls back to the demo payloads if an API route fails, so the UI
+degrades gracefully rather than erroring — check the browser network tab if you
+expect live inference and are not getting it.
 
 ## Setup
 
-### Prerequisites
-
-- Node.js 18+
-- Python 3.10+ with project dependencies installed
-
-### Install Dependencies
+Node 18+ and, for full mode, the Python project installed and at least one
+trained model.
 
 ```bash
+# from the repository root, for full mode only
+pip install -e .
+python scripts/train.py --quick        # produces a checkpoint + preprocessor
+
 cd web
 npm install
+npm run dev                            # http://localhost:3000
 ```
 
-### Development Server
+The API routes spawn a Python interpreter, resolved in this order:
+`$PYTHON`, then the active virtualenv's `python`, then `python3`. If the
+dashboard reports that the interpreter was not found, either activate the venv
+before `npm run dev` or set it explicitly:
 
 ```bash
-npm run dev
+PYTHON=/path/to/.venv/bin/python npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+## Static build
 
-### Production Build
+What GitHub Pages serves. `scripts/build-static.mjs` moves `app/api` aside for
+the build — Next.js cannot statically export route handlers — and restores it
+afterwards.
 
 ```bash
-npm run build
-npm start
+npm run build:static                   # output in web/out/
+NEXT_PUBLIC_BASE_PATH=/predictive-maintenance-digital-twin npm run build:static
 ```
 
-## Project Structure
+Regenerate the demo payloads it serves with
+`python scripts/export_demo_data.py` from the repository root.
+
+## API routes
+
+All routes shell out to `src/api/predict.py` through `lib/python.js`. Every route
+accepts `GET` with query parameters, which is what the client sends; `POST` with
+a JSON body is kept for scripted callers.
+
+| Route | Methods | Parameters | Returns |
+|---|---|---|---|
+| `/api/predict` | GET, POST | `dataset`, `engine`, `model`, `action=trajectory` for the per-cycle series | prediction snapshot |
+| `/api/simulate` | GET, POST | `initial_rul`, `rate`, `mode` | degradation trajectory |
+| `/api/engines` | GET | `dataset` | engine ids available for that dataset |
+| `/api/comparison` | GET | — | published training results from `models/*.json` |
+
+### Prediction response
+
+```json
+{
+  "engine_id": 24,
+  "dataset": "FD001",
+  "model": "ensemble",
+  "rul": 20.44,
+  "uncertainty": 3.1,
+  "health_score": 0.163,
+  "true_rul": 20.0,
+  "error": 0.44,
+  "individual_predictions": { "lstm": 20.4, "cnn": 22.1, "transformer": 18.8 },
+  "total_cycles": 186
+}
+```
+
+`uncertainty` is the spread across ensemble members, so it is zero when only one
+model is loaded. Errors come back as `{ "error": "..." }` with a 4xx/5xx status.
+
+## Structure
 
 ```
 web/
 ├── app/
-│   ├── api/              # API routes (Python bridge)
-│   │   ├── comparison/   # Model comparison data
-│   │   ├── engines/      # Available engines list
-│   │   └── predict/      # RUL prediction endpoint
-│   ├── comparison/       # Model comparison page
-│   ├── prediction/       # Prediction interface
-│   ├── simulation/       # Live simulation demo
-│   ├── globals.css       # Global styles + CSS variables
-│   ├── layout.jsx        # Root layout
-│   └── page.jsx          # Home page
-├── public/               # Static assets
-├── package.json
-├── tailwind.config.js
-└── README.md
+│   ├── api/              # GET/POST routes bridging to Python
+│   ├── prediction/       # engine picker, RUL + uncertainty, trajectory chart
+│   ├── simulation/       # degradation playback
+│   ├── comparison/       # cross-model charts and sortable table
+│   ├── layout.jsx        # root layout and metadata
+│   ├── icon.svg          # favicon
+│   └── page.jsx          # landing page
+├── components/           # Navigation, Sidebar, MetricCard, PlotlyChart, DemoNotice
+├── lib/
+│   ├── api.js            # data access + demo fallback + client-side simulation
+│   └── python.js         # subprocess bridge shared by every API route
+├── public/demo/          # precomputed demo payloads (generated)
+└── scripts/build-static.mjs
 ```
 
-## API Endpoints
+## Design system
 
-All API routes spawn Python subprocesses for ML inference:
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/predict` | POST | Run RUL prediction for an engine |
-| `/api/engines` | GET | List available engines per dataset |
-| `/api/comparison` | GET | Get model comparison metrics |
-
-### Prediction Request
-
-```json
-{
-  "dataset": "FD001",
-  "engine": 1,
-  "model": "ensemble"
-}
-```
-
-### Prediction Response
-
-```json
-{
-  "dataset": "FD001",
-  "engine": 1,
-  "model": "ensemble",
-  "predicted_rul": 45.2,
-  "confidence_interval": [38.1, 52.3],
-  "model_predictions": {
-    "lstm": 43.5,
-    "cnn": 47.8,
-    "transformer": 44.3
-  }
-}
-```
-
-## Running with Python Backend
-
-The web app requires the Python ML backend to be set up:
-
-1. From the project root, set up the Python environment:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -e .
-   ```
-
-2. Ensure trained models exist in `models/` directory
-
-3. Start the Next.js dev server from `web/` directory:
-   ```bash
-   npm run dev
-   ```
-
-## Design System
-
-### CSS Variables
-
-```css
---bg-primary: #050505
---bg-secondary: #0a0a0a
---bg-panel: #0f0f0f
---accent: #00ffaa
---accent-red: #ff4444
---accent-amber: #ffaa00
---text-primary: #fafafa
---text-secondary: #666
---border: #1a1a1a
-```
-
-### Utility Classes
-
-- `.panel` - Card container with border
-- `.btn-primary` / `.btn-secondary` - Button styles
-- `.metric-value` / `.metric-label` - Data display
-- `.nav-link` - Navigation links
-- `.status-dot` - Status indicators
-- `.skeleton` - Loading placeholder
-
-## Responsive Design
-
-- Mobile-first approach
-- Collapsible sidebars on mobile (< 768px)
-- Responsive grids for metrics and cards
-- Horizontally scrollable tables on small screens
+CSS variables and utility classes live in `app/globals.css`: a dark slate
+palette (`--bg-base` through `--bg-overlay`), an amber accent (`--amber`),
+status colours (`--green`, `--amber`, `--red`), a five-step text ramp
+(`--text-bright` to `--text-faint`), and a monospace type scale for anything
+numeric. Layout is mobile-first — sidebars collapse below 768px and tables
+scroll horizontally.
