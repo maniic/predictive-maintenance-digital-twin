@@ -9,9 +9,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="antialiased relative">
-        <div className="relative z-10">
-          {children}
-        </div>
+        <div className="relative z-10">{children}</div>
       </body>
     </html>
   )

@@ -11,7 +11,16 @@ const METRICS = [
   { value: 'test_cmapss', label: 'Score' },
 ]
 
-const BAR_COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#a855f7', '#06b6d4', '#ec4899', '#84cc16']
+const BAR_COLORS = [
+  '#f59e0b',
+  '#3b82f6',
+  '#10b981',
+  '#ef4444',
+  '#a855f7',
+  '#06b6d4',
+  '#ec4899',
+  '#84cc16',
+]
 
 const Skeleton = ({ className = '' }) => <div className={`skeleton ${className}`} />
 
@@ -37,26 +46,34 @@ export default function ComparisonPage() {
     }
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   const datasets = useMemo(() => {
     if (!data?.results) return []
-    return ['all', ...new Set(data.results.map(r => r.dataset))]
+    return ['all', ...new Set(data.results.map((r) => r.dataset))]
   }, [data])
 
   const models = useMemo(() => {
     if (!data?.results) return []
-    return [...new Set(data.results.map(r => r.model))]
+    return [...new Set(data.results.map((r) => r.model))]
   }, [data])
 
   const filteredResults = useMemo(() => {
     if (!data?.results) return []
-    let results = selectedDataset === 'all'
-      ? data.results
-      : data.results.filter(r => r.dataset === selectedDataset)
+    let results =
+      selectedDataset === 'all'
+        ? data.results
+        : data.results.filter((r) => r.dataset === selectedDataset)
     results = [...results].sort((a, b) => {
-      const aVal = a[sortBy] || 0
-      const bVal = b[sortBy] || 0
+      // Rows can legitimately lack a metric (see models/README.md on the
+      // C-MAPSS score). Sink those instead of scoring them as zero.
+      const aMissing = a[sortBy] == null
+      const bMissing = b[sortBy] == null
+      if (aMissing || bMissing) return aMissing === bMissing ? 0 : aMissing ? 1 : -1
+      const aVal = a[sortBy]
+      const bVal = b[sortBy]
       return sortAsc ? aVal - bVal : bVal - aVal
     })
     return results
@@ -65,7 +82,7 @@ export default function ComparisonPage() {
   const chartData = useMemo(() => {
     if (!data?.results) return []
     const byDataset = {}
-    data.results.forEach(r => {
+    data.results.forEach((r) => {
       if (!byDataset[r.dataset]) byDataset[r.dataset] = {}
       byDataset[r.dataset][r.model] = r[metric]
     })
@@ -82,7 +99,7 @@ export default function ComparisonPage() {
     }
     return models.map((model, i) => ({
       x: dsets,
-      y: dsets.map(ds => byDataset[ds]?.[model] || 0),
+      y: dsets.map((ds) => byDataset[ds]?.[model] || 0),
       type: 'bar',
       name: model.toUpperCase(),
       marker: { color: BAR_COLORS[i % BAR_COLORS.length] },
@@ -93,17 +110,15 @@ export default function ComparisonPage() {
   const heatmapData = useMemo(() => {
     if (!data?.results || selectedDataset !== 'all') return null
     const byDataset = {}
-    data.results.forEach(r => {
+    data.results.forEach((r) => {
       if (!byDataset[r.dataset]) byDataset[r.dataset] = {}
       byDataset[r.dataset][r.model] = r[metric]
     })
-    const dsets = [...new Set(data.results.map(r => r.dataset))].sort()
-    const z = models.map(model =>
-      dsets.map(ds => byDataset[ds]?.[model] ?? null)
-    )
+    const dsets = [...new Set(data.results.map((r) => r.dataset))].sort()
+    const z = models.map((model) => dsets.map((ds) => byDataset[ds]?.[model] ?? null))
     return {
       x: dsets,
-      y: models.map(m => m.toUpperCase()),
+      y: models.map((m) => m.toUpperCase()),
       z,
     }
   }, [data, metric, selectedDataset, models])
@@ -111,15 +126,23 @@ export default function ComparisonPage() {
   // Radar data for single dataset view
   const radarData = useMemo(() => {
     if (!data?.results || selectedDataset === 'all') return null
-    const dsResults = data.results.filter(r => r.dataset === selectedDataset)
+    const dsResults = data.results.filter((r) => r.dataset === selectedDataset)
     if (dsResults.length < 2) return null
 
-    const metricKeys = ['test_rmse', 'test_mae', 'test_cmapss']
-    const metricLabels = ['RMSE', 'MAE', 'Score']
+    // Only chart axes every model in this dataset actually reports, so a
+    // missing metric cannot masquerade as a zero.
+    const allKeys = [
+      ['test_rmse', 'RMSE'],
+      ['test_mae', 'MAE'],
+      ['test_cmapss', 'Score'],
+    ].filter(([k]) => dsResults.every((r) => r[k] != null))
+    if (allKeys.length < 2) return null
+    const metricKeys = allKeys.map(([k]) => k)
+    const metricLabels = allKeys.map(([, label]) => label)
 
     // Normalize each metric to 0-1 (inverted so lower=better=outer)
-    const maxVals = metricKeys.map(k => Math.max(...dsResults.map(r => r[k] || 0)))
-    const minVals = metricKeys.map(k => Math.min(...dsResults.map(r => r[k] || 0)))
+    const maxVals = metricKeys.map((k) => Math.max(...dsResults.map((r) => r[k])))
+    const minVals = metricKeys.map((k) => Math.min(...dsResults.map((r) => r[k])))
 
     return dsResults.map((r, i) => {
       const vals = metricKeys.map((k, mi) => {
@@ -142,7 +165,10 @@ export default function ComparisonPage() {
 
   const handleSort = (col) => {
     if (sortBy === col) setSortAsc(!sortAsc)
-    else { setSortBy(col); setSortAsc(true) }
+    else {
+      setSortBy(col)
+      setSortAsc(true)
+    }
   }
 
   const SortIcon = ({ col }) => {
@@ -151,7 +177,7 @@ export default function ComparisonPage() {
   }
 
   const summaryText = data?.results
-    ? `${models.length} models across ${[...new Set(data.results.map(r => r.dataset))].length} datasets`
+    ? `${models.length} models across ${[...new Set(data.results.map((r) => r.dataset))].length} datasets`
     : ''
 
   return (
@@ -162,16 +188,22 @@ export default function ComparisonPage() {
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-8">
           <div className="mb-6">
             <div className="data-label mb-1">Model Comparison</div>
-            <h1 className="text-xl md:text-2xl font-300 text-[var(--text-bright)]">Performance Analysis</h1>
+            <h1 className="text-xl md:text-2xl font-300 text-[var(--text-bright)]">
+              Performance Analysis
+            </h1>
             {summaryText && (
-              <p className="font-mono text-[0.65rem] text-[var(--text-faint)] mt-1">{summaryText}</p>
+              <p className="font-mono text-[0.65rem] text-[var(--text-faint)] mt-1">
+                {summaryText}
+              </p>
             )}
           </div>
 
           {error ? (
             <div className="card p-8 text-center">
               <p className="text-[var(--red)] mb-4">{error}</p>
-              <button onClick={fetchData} className="btn-primary">Retry</button>
+              <button onClick={fetchData} className="btn-primary">
+                Retry
+              </button>
             </div>
           ) : loading ? (
             <div className="space-y-5">
@@ -193,8 +225,10 @@ export default function ComparisonPage() {
                     onChange={(e) => setSelectedDataset(e.target.value)}
                     className="w-full sm:w-auto bg-[var(--bg-raised)] border border-[var(--border)] px-3 py-2 font-mono text-sm text-[var(--text-primary)] rounded-sm"
                   >
-                    {datasets.map(d => (
-                      <option key={d} value={d}>{d === 'all' ? 'All Datasets' : d}</option>
+                    {datasets.map((d) => (
+                      <option key={d} value={d}>
+                        {d === 'all' ? 'All Datasets' : d}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -205,7 +239,11 @@ export default function ComparisonPage() {
                     onChange={(e) => setMetric(e.target.value)}
                     className="w-full sm:w-auto bg-[var(--bg-raised)] border border-[var(--border)] px-3 py-2 font-mono text-sm text-[var(--text-primary)] rounded-sm"
                   >
-                    {METRICS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                    {METRICS.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -213,7 +251,7 @@ export default function ComparisonPage() {
               {/* Bar Chart */}
               <div className="card p-5">
                 <div className="data-label mb-4">
-                  {METRICS.find(m => m.value === metric)?.label} by Model
+                  {METRICS.find((m) => m.value === metric)?.label} by Model
                 </div>
                 <PlotlyChart
                   data={chartData}
@@ -221,8 +259,19 @@ export default function ComparisonPage() {
                     margin: { t: 10, b: 60, l: 50, r: 10 },
                     height: 260,
                     barmode: 'group',
-                    yaxis: { title: { text: METRICS.find(m => m.value === metric)?.label, font: { size: 10 } } },
-                    legend: { orientation: 'h', y: -0.25, x: 0.5, xanchor: 'center', font: { size: 9 } },
+                    yaxis: {
+                      title: {
+                        text: METRICS.find((m) => m.value === metric)?.label,
+                        font: { size: 10 },
+                      },
+                    },
+                    legend: {
+                      orientation: 'h',
+                      y: -0.25,
+                      x: 0.5,
+                      xanchor: 'center',
+                      font: { size: 9 },
+                    },
                     showlegend: selectedDataset === 'all',
                   }}
                 />
@@ -232,22 +281,27 @@ export default function ComparisonPage() {
               {heatmapData && (
                 <div className="card p-5">
                   <div className="data-label mb-4">
-                    {METRICS.find(m => m.value === metric)?.label} Heatmap
+                    {METRICS.find((m) => m.value === metric)?.label} Heatmap
                   </div>
                   <PlotlyChart
-                    data={[{
-                      x: heatmapData.x,
-                      y: heatmapData.y,
-                      z: heatmapData.z,
-                      type: 'heatmap',
-                      colorscale: 'Viridis',
-                      reversescale: true,
-                      hoverongaps: false,
-                      colorbar: {
-                        title: { text: METRICS.find(m => m.value === metric)?.label, font: { size: 10, color: '#94a3b8' } },
-                        tickfont: { size: 9, color: '#94a3b8' },
+                    data={[
+                      {
+                        x: heatmapData.x,
+                        y: heatmapData.y,
+                        z: heatmapData.z,
+                        type: 'heatmap',
+                        colorscale: 'Viridis',
+                        reversescale: true,
+                        hoverongaps: false,
+                        colorbar: {
+                          title: {
+                            text: METRICS.find((m) => m.value === metric)?.label,
+                            font: { size: 10, color: '#94a3b8' },
+                          },
+                          tickfont: { size: 9, color: '#94a3b8' },
+                        },
                       },
-                    }]}
+                    ]}
                     layout={{
                       margin: { t: 10, b: 50, l: 100, r: 10 },
                       height: Math.max(200, models.length * 35 + 80),
@@ -280,12 +334,19 @@ export default function ComparisonPage() {
                           gridcolor: 'rgba(30, 41, 59, 0.8)',
                         },
                       },
-                      legend: { orientation: 'h', y: -0.1, x: 0.5, xanchor: 'center', font: { size: 9 } },
+                      legend: {
+                        orientation: 'h',
+                        y: -0.1,
+                        x: 0.5,
+                        xanchor: 'center',
+                        font: { size: 9 },
+                      },
                       showlegend: true,
                     }}
                   />
                   <p className="font-mono text-[0.6rem] text-[var(--text-faint)] mt-2">
-                    Normalized 0-1 (outer = better). Lower RMSE/MAE/Score maps to higher radar value.
+                    Normalized 0-1 (outer = better). Lower RMSE/MAE/Score maps to higher radar
+                    value.
                   </p>
                 </div>
               )}
@@ -301,31 +362,36 @@ export default function ComparisonPage() {
                         className="text-right px-4 py-3 data-label cursor-pointer hover:text-[var(--text-secondary)] transition-colors"
                         onClick={() => handleSort('test_rmse')}
                       >
-                        RMSE<SortIcon col="test_rmse" />
+                        RMSE
+                        <SortIcon col="test_rmse" />
                       </th>
                       <th
                         className="text-right px-4 py-3 data-label cursor-pointer hover:text-[var(--text-secondary)] transition-colors"
                         onClick={() => handleSort('test_mae')}
                       >
-                        MAE<SortIcon col="test_mae" />
+                        MAE
+                        <SortIcon col="test_mae" />
                       </th>
                       <th
                         className="text-right px-4 py-3 data-label cursor-pointer hover:text-[var(--text-secondary)] transition-colors"
                         onClick={() => handleSort('test_cmapss')}
                       >
-                        Score<SortIcon col="test_cmapss" />
+                        Score
+                        <SortIcon col="test_cmapss" />
                       </th>
                       <th
                         className="text-right px-4 py-3 data-label cursor-pointer hover:text-[var(--text-secondary)] transition-colors"
                         onClick={() => handleSort('epochs')}
                       >
-                        Epochs<SortIcon col="epochs" />
+                        Epochs
+                        <SortIcon col="epochs" />
                       </th>
                       <th
                         className="text-right px-4 py-3 data-label cursor-pointer hover:text-[var(--text-secondary)] transition-colors"
                         onClick={() => handleSort('val_rmse')}
                       >
-                        Val RMSE<SortIcon col="val_rmse" />
+                        Val RMSE
+                        <SortIcon col="val_rmse" />
                       </th>
                     </tr>
                   </thead>
@@ -339,8 +405,17 @@ export default function ComparisonPage() {
                         <td className="px-4 py-3 text-[var(--text-muted)]">{r.dataset}</td>
                         <td className="px-4 py-3 text-right">{r.test_rmse?.toFixed(2)}</td>
                         <td className="px-4 py-3 text-right">{r.test_mae?.toFixed(2)}</td>
-                        <td className="px-4 py-3 text-right text-[var(--text-muted)]">
-                          {r.test_cmapss?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        <td
+                          className="px-4 py-3 text-right text-[var(--text-muted)]"
+                          title={
+                            r.test_cmapss == null
+                              ? 'Not reported for this run — see models/README.md'
+                              : undefined
+                          }
+                        >
+                          {r.test_cmapss == null
+                            ? '—'
+                            : r.test_cmapss.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </td>
                         <td className="px-4 py-3 text-right text-[var(--text-muted)]">
                           {r.epochs ?? '—'}

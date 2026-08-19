@@ -4,15 +4,86 @@
 
 That number is called **Remaining Useful Life (RUL)**, and predicting it accurately is the difference between fixing an engine right before it fails and grounding a fleet for parts that had thousands of cycles left in them.
 
-**[▶ Open the live dashboard](https://maniic.github.io/predictive-maintenance-digital-twin/)** — run predictions on real engine data, watch an engine degrade in a live simulation, and compare model performance. No install needed.
+**[▶ Open the live dashboard](https://maniic.github.io/predictive-maintenance-digital-twin/)** — pick a real test engine, get an RUL estimate with confidence bounds, and watch an engine degrade in a live simulation. No install needed.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![PyTorch](https://img.shields.io/badge/PyTorch-Lightning-orange)
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![Best RMSE](https://img.shields.io/badge/best%20RMSE-11.71%20cycles-brightgreen)
+![CI](https://github.com/maniic/predictive-maintenance-digital-twin/actions/workflows/ci.yml/badge.svg)
 ![Deploy](https://github.com/maniic/predictive-maintenance-digital-twin/actions/workflows/deploy-pages.yml/badge.svg)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-[![Dashboard home](docs/screenshots/home.png)](https://maniic.github.io/predictive-maintenance-digital-twin/)
+[![The dashboard: picking an engine, predicting its remaining life with confidence bounds, then playing a degradation simulation](docs/dashboard-demo.gif)](https://maniic.github.io/predictive-maintenance-digital-twin/)
+
+## Results
+
+Predictions are measured in **cycles** (one cycle = one flight). Best model per dataset, on held-out test engines:
+
+| Dataset | Best Model | RMSE (cycles) | MAE | Operating Conditions | Fault Modes |
+|---------|------------|------|-----|---------------------|-------------|
+| FD001 | LSTM | **13.48** | 9.86 | 1 | 1 (HPC) |
+| FD002 | EnhancedLSTM-Asymmetric | **16.77** | 13.76 | 6 | 1 (HPC) |
+| FD003 | TwoStage | **11.71** | 7.53 | 1 | 2 (HPC + Fan) |
+| FD004 | EnhancedLSTM-Asymmetric | **14.75** | 9.33 | 6 | 2 (HPC + Fan) |
+
+Put plainly: on the hardest dataset (FD004 — six operating regimes, two simultaneous fault modes), the model predicts an engine's remaining life to within about **15 flights** on average.
+
+Every figure traces to a committed result file in [`models/`](models/README.md). No number here comes from anywhere else. **These metrics are computed over every sliding window of every test trajectory, not one prediction per engine as the standard C-MAPSS benchmark specifies — so they are not comparable to published leaderboard figures.** Why, and what it changes, is in [the architecture notes](docs/architecture.md#evaluation-protocol).
+
+→ **[Full results: all nine models, all four datasets, and what the comparison actually shows](docs/results.md)**
+
+## Reproduce these results
+
+Three commands from a cold clone. The C-MAPSS data is committed, so there is nothing to download:
+
+```bash
+git clone https://github.com/maniic/predictive-maintenance-digital-twin.git
+cd predictive-maintenance-digital-twin
+pip install -e .
+```
+
+Train a model and predict on a real engine:
+
+```bash
+python scripts/train.py --quick          # small LSTM, FD001, ~2 min on CPU
+```
+
+That ends by predicting on a real test engine. To score any engine yourself:
+
+```bash
+python scripts/predict.py --dataset FD001 --engine 24
+```
+
+```
+  FD001 engine 24
+  186 cycles observed
+
+  Predicted RUL   21.3 cycles
+  95% interval    n/a (uncertainty is ensemble spread; only one model loaded)
+  True RUL        20 cycles
+  Error           +1.3 cycles
+  Health score    17%
+```
+
+That is real output from a two-minute model — the exact figures move a little
+between runs, since only the data split is seeded.
+
+To reproduce a specific row of the table above:
+
+```bash
+python scripts/train.py --models twostage --datasets FD003     # the 11.71 result
+python scripts/train.py --models all --datasets all            # everything, hours on CPU
+```
+
+Verify the data is the unmodified NASA distribution, and run the tests:
+
+```bash
+python scripts/fetch_data.py --verify
+pip install -e ".[dev]" && pytest
+```
+
+Optional extras: `".[tracking]"` for MLflow, `".[explain]"` for SHAP.
 
 ## Why I built this
 
@@ -22,75 +93,9 @@ So I built the whole pipeline: data ingestion, seven deep learning architectures
 
 ## What it does
 
-1. **Ingests run-to-failure sensor data** from NASA's C-MAPSS turbofan dataset: 21 sensors per engine, hundreds of engines, four sub-datasets of increasing difficulty (multiple operating conditions, multiple simultaneous fault modes).
-2. **Trains and evaluates 7 deep learning architectures** on the RUL prediction task: bidirectional LSTM, temporal CNN, Transformer, two Enhanced-LSTM variants with attention, a two-stage health-indicator model, and a weighted ensemble with uncertainty quantification. Experiments are tracked with MLflow.
-3. **Serves everything through an interactive dashboard** where you can pick a real test engine and get an RUL estimate with confidence bounds, play back a live degradation simulation, and compare every model's accuracy across all four datasets.
-
-## Results
-
-Predictions are measured in **cycles** (one cycle = one flight). Best model per dataset, evaluated on held-out test engines:
-
-| Dataset | Best Model | RMSE (cycles) | MAE | Operating Conditions | Fault Modes |
-|---------|------------|------|-----|---------------------|-------------|
-| FD001 | LSTM | **13.48** | 9.86 | 1 | 1 (HPC) |
-| FD002 | EnhancedLSTM | **16.77** | 13.76 | 6 | 1 (HPC) |
-| FD003 | TwoStage | **11.71** | 7.53 | 1 | 2 (HPC + Fan) |
-| FD004 | LSTM | **14.87** | 9.83 | 6 | 2 (HPC + Fan) |
-
-Put plainly: on the hardest dataset (FD004 — six operating regimes, two simultaneous fault modes), the model predicts an engine's remaining life to within about **15 flights** on average.
-
-<details>
-<summary>Full per-model results (all 4 datasets)</summary>
-
-**FD001**
-
-| Model | RMSE | MAE |
-|-------|------|-----|
-| LSTM | 13.48 | 9.86 |
-| TwoStage | 14.01 | 10.17 |
-| Ensemble | 14.14 | 10.81 |
-| Transformer | 14.66 | 10.96 |
-| EnhancedLSTM-Weighted | 14.65 | 11.00 |
-| EnhancedLSTM-Asymmetric | 15.41 | 11.12 |
-| CNN | 17.63 | 13.80 |
-
-**FD002**
-
-| Model | RMSE | MAE |
-|-------|------|-----|
-| EnhancedLSTM-Asymmetric | 16.77 | 13.76 |
-| EnhancedLSTM-Weighted | 16.94 | 13.71 |
-| LSTM | 17.49 | 14.01 |
-| TwoStage | 17.50 | 13.48 |
-| Ensemble | 19.80 | 17.02 |
-| CNN | 20.29 | 15.83 |
-| Transformer | 39.36 | 36.33 |
-
-**FD003**
-
-| Model | RMSE | MAE |
-|-------|------|-----|
-| TwoStage | 11.71 | 7.53 |
-| EnhancedLSTM-Asymmetric | 12.00 | 8.17 |
-| LSTM | 12.23 | 8.37 |
-| EnhancedLSTM-Weighted | 13.38 | 8.86 |
-| Ensemble | 13.66 | 10.13 |
-| CNN | 16.82 | 12.05 |
-| Transformer | 19.47 | 14.60 |
-
-**FD004**
-
-| Model | RMSE | MAE |
-|-------|------|-----|
-| EnhancedLSTM-Asymmetric | 14.75 | 9.33 |
-| LSTM | 14.87 | 9.83 |
-| Ensemble | 16.02 | 10.14 |
-| TwoStage | 16.68 | 9.81 |
-| EnhancedLSTM-Weighted | 17.19 | 12.96 |
-| CNN | 17.45 | 11.23 |
-| Transformer | 19.23 | 11.67 |
-
-</details>
+1. **Ingests run-to-failure sensor data** from NASA's C-MAPSS turbofan dataset: 21 sensors per engine, 709 engines, four sub-datasets of increasing difficulty (multiple operating conditions, multiple simultaneous fault modes).
+2. **Trains and evaluates 7 deep learning architectures** on the RUL prediction task: bidirectional LSTM, temporal CNN, Transformer, two Enhanced-LSTM variants with attention, a two-stage health-indicator model, and a weighted ensemble with uncertainty quantification. Two further variants were trained on FD001 only and appear on the dashboard's comparison view.
+3. **Serves everything through an interactive dashboard** where you can pick a real test engine and get an RUL estimate with confidence bounds, play back a degradation simulation, and compare every model's accuracy across all four datasets.
 
 ## The dashboard
 
@@ -104,15 +109,17 @@ Pick a dataset, a model, and a real test engine. The dashboard shows the predict
 
 ### Simulation — "What does failure look like as it happens?"
 
-A digital-twin degradation simulation: configure the initial life, degradation rate, and fault mode, then watch the engine age in real time while the model tracks its declining RUL and health score, raising warnings as it approaches failure.
+A digital-twin degradation simulation: configure the initial life, degradation rate, and fault mode, then watch the engine age cycle by cycle while its RUL and health score decline.
 
 ![Simulation view](docs/screenshots/simulation.png)
 
 ### Comparison — "Which model should you trust?"
 
-Every model, every dataset, side by side: RMSE, MAE, and the asymmetric C-MAPSS score (which penalizes overestimating RUL more than underestimating it, because telling an operator an engine has more life than it does is the expensive mistake).
+Every model, every dataset, side by side: RMSE, MAE, and the asymmetric C-MAPSS score, which penalizes overestimating RUL more than underestimating it — because telling an operator an engine has more life than it does is the expensive mistake.
 
 ![Comparison view](docs/screenshots/comparison.png)
+
+**On the hosted demo:** GitHub Pages serves a static export with no Python backend and no trained checkpoints. The engine data and ground-truth RUL are real C-MAPSS; the predictions are illustrative values calibrated to each dataset's reported test error. The page says so in a badge and an in-page banner. Run it locally against the real models with `npm run dev` — see [the dashboard README](web/README.md).
 
 ## How it works
 
@@ -120,107 +127,74 @@ Every model, every dataset, side by side: RMSE, MAE, and the asymmetric C-MAPSS 
  NASA C-MAPSS                Training pipeline                    Serving
 ──────────────────    ─────────────────────────────────    ──────────────────────
  21 sensors            sliding windows (30 cycles)          Next.js dashboard
- 700+ engines      →   min-max normalization            →   • local: live PyTorch
+ 709 engines       →   min-max normalization            →   • local: live PyTorch
  run-to-failure        RUL capped at 125 (piecewise)          inference via Python
- 4 sub-datasets        7 architectures, PyTorch Lightning     • hosted: static build
-                       MLflow experiment tracking             on GitHub Pages
+ 4 sub-datasets        7 architectures, PyTorch Lightning     • hosted: static demo
+                       optional MLflow tracking               on GitHub Pages
 ```
 
 - **Sequence modeling**: each prediction sees the last 30 cycles of all sensors, so the models learn degradation *trends*, not just snapshots.
-- **Piecewise RUL target**: early in life, an engine's sensors say nothing about its distant failure date, so the target is capped at 125 cycles — the standard C-MAPSS practice that stops models from hallucinating precision they can't have.
+- **Piecewise RUL target**: early in life, an engine's sensors say nothing about its distant failure date, so the target is capped at 125 cycles — standard C-MAPSS practice that stops models from claiming precision the data does not contain.
 - **Ensemble + uncertainty**: the ensemble averages LSTM, CNN, and Transformer predictions and reports their disagreement as an uncertainty estimate, shown as confidence bands in the dashboard.
-- **Two deployment modes**: locally the dashboard calls the real PyTorch models through a Python bridge; the hosted demo is a fully static build running on precomputed outputs (clearly marked with a DEMO badge), deployed automatically by GitHub Actions on every push to `main`.
+- **The digital twin**: a forward model calibrated from real FD001 sensor statistics, generating plausible sensor streams for an engine that isn't in the dataset — so the trained models can be exercised on synthetic degradation at any rate or fault mode.
+
+→ **[Architecture: the full pipeline, all seven models and how they differ, the ensemble's uncertainty, and the evaluation protocol](docs/architecture.md)**
 
 ## Models
 
 | Model | Idea | Where it wins |
 |-------|------|---------------|
-| LSTM (bidirectional) | 2-layer BiLSTM, hidden 128 | Best all-rounder; wins FD001/FD004 |
-| Temporal CNN | 4 dilated conv blocks | Fast, competitive baseline |
-| Transformer | 4-layer encoder, 4 heads | Single-condition datasets |
-| EnhancedLSTM (weighted / asymmetric) | Attention + residuals, asymmetric loss penalizing late predictions | Multi-condition datasets (FD002) |
-| Two-Stage | Autoencoder health indicator → RUL regression | Multi-fault datasets (FD003) |
-| Ensemble | Weighted average + uncertainty | Most robust, powers the dashboard default |
+| LSTM (bidirectional) | 2-layer BiLSTM, hidden 128, attention pooling | Best all-rounder; wins FD001 |
+| Temporal CNN | Dilated conv blocks, receptive field doubling per layer | Fast, competitive baseline |
+| Transformer | 4-layer encoder, 4 heads | Single-condition datasets; collapses on FD002 |
+| EnhancedLSTM (weighted / asymmetric) | Attention + residuals, loss penalizing late predictions | Multi-condition datasets; wins FD002 and FD004 |
+| Two-Stage | Health-state classifier → three specialized RUL heads | Multi-fault datasets; best result overall (FD003) |
+| Ensemble | Inverse-validation-RMSE weighted average + spread | Most robust; powers the dashboard default |
 
-## Quick start
+## Limitations
 
-### Run the training pipeline
+Worth being straight about, because the boundaries matter more than the numbers:
 
-```bash
-git clone https://github.com/maniic/predictive-maintenance-digital-twin.git
-cd predictive-maintenance-digital-twin
-
-python -m venv .venv
-source .venv/bin/activate    # Windows: .venv\Scripts\activate
-pip install -e .
-
-# Download C-MAPSS from the NASA Prognostics Data Repository into data/raw/
-# https://data.nasa.gov/dataset/cmapss-jet-engine-simulated-data
-
-python scripts/train_all_models.py --datasets FD001            # all models, one dataset
-python scripts/train_all_models.py --models lstm --datasets FD001
-```
-
-Training behavior (sequence length, normalization, RUL cap, epochs, early stopping) is configured in `config/config.yaml`.
-
-### Run the dashboard locally (live inference)
-
-The dashboard's API routes call the Python models via subprocess, so activate the venv first:
-
-```bash
-source .venv/bin/activate
-cd web
-npm install
-npm run dev        # http://localhost:3000
-```
-
-### Build the hosted demo (no Python needed)
-
-```bash
-cd web
-npm run build:static      # static site in web/out/, demo data from scripts/export_demo_data.py
-```
-
-The GitHub Actions workflow (`.github/workflows/deploy-pages.yml`) runs this build and deploys it to GitHub Pages on every push to `main`.
+- **C-MAPSS is simulated, not real flight data.** NASA generated it with a thermodynamic engine model plus injected noise and fault progression. Real sensor streams bring missing values, drift and recalibration, maintenance events mid-life, sensors that fail independently of the engine, and far fewer clean run-to-failure examples — most fleets never let an engine run to failure at all. Expect a substantial accuracy drop and a need for far more careful preprocessing.
+- **The evaluation protocol is not the C-MAPSS benchmark.** Metrics are per sliding window, not one prediction per test engine. They compare architectures fairly against each other on this data; they are not leaderboard-comparable. [Details](docs/architecture.md#evaluation-protocol).
+- **17 test engines are excluded.** Six in FD002 and eleven in FD004 have trajectories shorter than the 30-cycle window, so they produce no predictions. Short trajectories are the hardest cases, which makes the reported task marginally easier than the full test set.
+- **Uncertainty is model disagreement, not calibration.** The band is the spread across three ensemble members — a useful signal that the models are unsure, not a statistically calibrated 95% interval. Three models is a small sample for a standard deviation.
+- **The RUL cap at 125 is an assumption.** It encodes "you cannot tell how much life remains when an engine is healthy". It is standard practice and it improves results, but it means the models cannot distinguish a nearly-new engine from a middle-aged one.
+- **No trained checkpoints are committed.** They are large binaries. Reproducing the exact published numbers means retraining, which takes hours on CPU.
+- **The digital twin is a statistical interpolation**, calibrated from FD001 only — not a thermodynamic model, and representative of one operating condition.
 
 ## Project structure
 
 ```
-├── src/                  # Python package: data ingestion, models, digital twin
-│   ├── data/             #   C-MAPSS loading, RUL computation, windowing
-│   ├── models/           #   LSTM / CNN / Transformer / two-stage / ensemble
-│   ├── digital_twin/     #   Degradation simulator + RUL predictor
-│   └── api/              #   CLI bridge the dashboard calls for live inference
-├── scripts/              # Training entrypoints, demo-data export
+├── src/                  # Python package
+│   ├── data/             #   C-MAPSS loading, RUL computation, preprocessing, windowing
+│   ├── models/           #   LSTM / CNN / Transformer / enhanced / two-stage / ensemble
+│   ├── digital_twin/     #   Degradation simulator + RUL predictor (the serving path)
+│   ├── evaluation/       #   Metrics and SHAP explainability
+│   └── api/              #   JSON CLI the dashboard calls for live inference
+├── scripts/              # train.py, predict.py, fetch_data.py, export_demo_data.py
 ├── config/config.yaml    # Data, preprocessing, and training configuration
-├── models/               # Training result logs (JSON)
+├── models/               # Published training results (JSON) — see models/README.md
+├── tests/                # 100 tests: windowing, leakage, metrics, end-to-end serving
+├── docs/                 # Architecture, full results, dataset notes
 ├── web/                  # Next.js dashboard (prediction / simulation / comparison)
-└── .github/workflows/    # CI: static build + GitHub Pages deploy
+└── .github/workflows/    # CI (tests, lint, dashboard build) + Pages deploy
 ```
 
-## The dataset
+## Documentation
 
-C-MAPSS (Commercial Modular Aero-Propulsion System Simulation) is NASA's benchmark for engine prognostics: simulated turbofan engines run from healthy operation to failure.
-
-| Dataset | Train engines | Test engines | Operating conditions | Fault modes |
-|---------|--------------|--------------|---------------------|-------------|
-| FD001 | 100 | 100 | 1 | HPC degradation |
-| FD002 | 260 | 259 | 6 | HPC degradation |
-| FD003 | 100 | 100 | 1 | HPC + Fan degradation |
-| FD004 | 249 | 248 | 6 | HPC + Fan degradation |
-
-Each engine reports 21 sensors per cycle: temperatures, pressures, fan and core speeds, bypass ratio, bleed enthalpy, and coolant bleed measurements.
-
-## Evaluation
-
-- **RMSE / MAE** in cycles, on held-out test engines.
-- **C-MAPSS score**: the competition's asymmetric metric. Predicting an engine will last *longer* than it does is penalized exponentially harder than the reverse, mirroring the real cost asymmetry of maintenance planning:
-
-```
-Score = Σ exp(-d/13) - 1   if d < 0  (predicted early — cheap mistake)
-        Σ exp(d/10) - 1    if d ≥ 0  (predicted late — expensive mistake)
-```
+| Document | What's in it |
+|---|---|
+| [docs/architecture.md](docs/architecture.md) | The pipeline end to end, all seven architectures, the ensemble's uncertainty, the digital twin, and the evaluation protocol |
+| [docs/results.md](docs/results.md) | Every model on every dataset, and what the comparison shows |
+| [docs/data.md](docs/data.md) | C-MAPSS: what it is, why it's committed here, how to verify and re-fetch it |
+| [models/README.md](models/README.md) | Which run produced which published number |
+| [web/README.md](web/README.md) | Running the dashboard locally against real models |
 
 ## Acknowledgments
 
-- NASA Prognostics Center of Excellence for the C-MAPSS dataset.
+- NASA Prognostics Center of Excellence for the C-MAPSS dataset. See [docs/data.md](docs/data.md) for the citation and licensing.
+
+## License
+
+MIT — see [LICENSE](LICENSE). The C-MAPSS dataset in `data/raw/` is a work of the United States Government and is not covered by that license.

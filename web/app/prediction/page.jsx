@@ -5,6 +5,7 @@ import Navigation from '../../components/Navigation'
 import Sidebar from '../../components/Sidebar'
 import MetricCard from '../../components/MetricCard'
 import PlotlyChart from '../../components/PlotlyChart'
+import DemoNotice from '../../components/DemoNotice'
 import { fetchEngines, fetchPrediction, fetchTrajectory } from '../../lib/api'
 
 const DATASETS = ['FD001', 'FD002', 'FD003', 'FD004']
@@ -25,8 +26,20 @@ const Skeleton = ({ className = '' }) => <div className={`skeleton ${className}`
 
 const Spinner = () => (
   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="4"
+      fill="none"
+    />
+    <path
+      className="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+    />
   </svg>
 )
 
@@ -47,13 +60,13 @@ export default function PredictionPage() {
     setEnginesLoading(true)
     setError(null)
     fetchEngines(dataset)
-      .then(data => {
+      .then((data) => {
         setEngines(data.engines || [])
         if (data.engines?.length) setEngine(data.engines[0])
         setPrediction(null)
         setTrajectoryData(null)
       })
-      .catch(err => setError(err.message))
+      .catch((err) => setError(err.message))
       .finally(() => setEnginesLoading(false))
   }, [dataset])
 
@@ -68,7 +81,7 @@ export default function PredictionPage() {
       // Fetch real trajectory in background
       setTrajectoryLoading(true)
       fetchTrajectory(dataset, engine)
-        .then(traj => setTrajectoryData(traj.trajectory))
+        .then((traj) => setTrajectoryData(traj.trajectory))
         .catch(() => {}) // silently fail, prediction still shows
         .finally(() => setTrajectoryLoading(false))
     } catch (err) {
@@ -86,10 +99,7 @@ export default function PredictionPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navigation
-        activePage="/prediction"
-        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-      />
+      <Navigation activePage="/prediction" onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
 
       <div className="flex-1 flex flex-col md:flex-row">
         <Sidebar
@@ -105,7 +115,11 @@ export default function PredictionPage() {
               onChange={(e) => setDataset(e.target.value)}
               className="w-full bg-[var(--bg-raised)] border border-[var(--border)] px-3 py-2 font-mono text-sm text-[var(--text-primary)] rounded-sm"
             >
-              {DATASETS.map(d => <option key={d} value={d}>{d}</option>)}
+              {DATASETS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
             </select>
             <p className="font-mono text-[0.6rem] text-[var(--text-faint)] mt-1.5">
               {DATASET_INFO[dataset].desc}
@@ -120,7 +134,11 @@ export default function PredictionPage() {
               onChange={(e) => setModel(e.target.value)}
               className="w-full bg-[var(--bg-raised)] border border-[var(--border)] px-3 py-2 font-mono text-sm text-[var(--text-primary)] rounded-sm"
             >
-              {MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              {MODELS.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -135,7 +153,11 @@ export default function PredictionPage() {
                 onChange={(e) => setEngine(Number(e.target.value))}
                 className="w-full bg-[var(--bg-raised)] border border-[var(--border)] px-3 py-2 font-mono text-sm text-[var(--text-primary)] rounded-sm"
               >
-                {engines.map(e => <option key={e} value={e}>{e}</option>)}
+                {engines.map((e) => (
+                  <option key={e} value={e}>
+                    {e}
+                  </option>
+                ))}
               </select>
             )}
             <p className="font-mono text-[0.6rem] text-[var(--text-faint)] mt-1.5">
@@ -144,7 +166,10 @@ export default function PredictionPage() {
           </div>
 
           <button
-            onClick={() => { predict(); setSidebarOpen(false) }}
+            onClick={() => {
+              predict()
+              setSidebarOpen(false)
+            }}
             disabled={loading || enginesLoading}
             className="btn-primary w-full flex items-center justify-center gap-2"
           >
@@ -158,14 +183,24 @@ export default function PredictionPage() {
           <div className="max-w-4xl">
             <div className="mb-6">
               <div className="data-label mb-1">RUL Prediction</div>
-              <h1 className="text-xl md:text-2xl font-300 text-[var(--text-bright)]">Engine Analysis</h1>
+              <h1 className="text-xl md:text-2xl font-300 text-[var(--text-bright)]">
+                Engine Analysis
+              </h1>
             </div>
+
+            <DemoNotice>
+              Engine sensor data and true RUL are real NASA C-MAPSS; the predicted values are
+              illustrative, generated to match the reported test error rather than by running the
+              trained models.
+            </DemoNotice>
 
             {/* Error */}
             {error && (
               <div className="card p-5 mb-5 border-l-2 border-l-[var(--red)]">
                 <p className="font-mono text-sm text-[var(--red)] mb-3">{error}</p>
-                <button onClick={predict} className="btn-secondary text-xs">Retry</button>
+                <button onClick={predict} className="btn-secondary text-xs">
+                  Retry
+                </button>
               </div>
             )}
 
@@ -174,12 +209,23 @@ export default function PredictionPage() {
               <div className="space-y-4">
                 <div className="card p-6">
                   <div className="grid grid-cols-2 gap-8">
-                    <div><Skeleton className="h-5 w-20 mb-2" /><Skeleton className="h-10 w-28" /></div>
-                    <div><Skeleton className="h-5 w-20 mb-2" /><Skeleton className="h-10 w-28" /></div>
+                    <div>
+                      <Skeleton className="h-5 w-20 mb-2" />
+                      <Skeleton className="h-10 w-28" />
+                    </div>
+                    <div>
+                      <Skeleton className="h-5 w-20 mb-2" />
+                      <Skeleton className="h-10 w-28" />
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  {[1,2,3].map(i => <div key={i} className="card p-4"><Skeleton className="h-4 w-14 mb-2" /><Skeleton className="h-7 w-16" /></div>)}
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="card p-4">
+                      <Skeleton className="h-4 w-14 mb-2" />
+                      <Skeleton className="h-7 w-16" />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -187,7 +233,9 @@ export default function PredictionPage() {
             {/* Empty */}
             {!prediction && !loading && !error && (
               <div className="card p-12 text-center">
-                <div className="text-[var(--text-muted)] mb-1">Select an engine and run prediction</div>
+                <div className="text-[var(--text-muted)] mb-1">
+                  Select an engine and run prediction
+                </div>
                 <div className="font-mono text-[0.65rem] text-[var(--text-faint)]">
                   Model will estimate remaining useful life with uncertainty bounds
                 </div>
@@ -264,37 +312,48 @@ export default function PredictionPage() {
                 </div>
 
                 {/* Individual predictions */}
-                {prediction.individual_predictions && Object.keys(prediction.individual_predictions).length > 1 && (
-                  <div className="card p-5">
-                    <div className="data-label mb-4">Model Breakdown</div>
-                    <div className="space-y-2.5">
-                      {Object.entries(prediction.individual_predictions).map(([name, value]) => (
-                        <div key={name} className="flex items-center gap-3">
-                          <span className="font-mono text-[0.65rem] text-[var(--text-muted)] w-20 md:w-24 uppercase">{name}</span>
-                          <div className="flex-1 h-1 bg-[var(--bg-raised)] rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-[var(--amber)] rounded-full"
-                              style={{ width: `${Math.min(100, (value / 150) * 100)}%` }}
-                            />
+                {prediction.individual_predictions &&
+                  Object.keys(prediction.individual_predictions).length > 1 && (
+                    <div className="card p-5">
+                      <div className="data-label mb-4">Model Breakdown</div>
+                      <div className="space-y-2.5">
+                        {Object.entries(prediction.individual_predictions).map(([name, value]) => (
+                          <div key={name} className="flex items-center gap-3">
+                            <span className="font-mono text-[0.65rem] text-[var(--text-muted)] w-20 md:w-24 uppercase">
+                              {name}
+                            </span>
+                            <div className="flex-1 h-1 bg-[var(--bg-raised)] rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-[var(--amber)] rounded-full"
+                                style={{ width: `${Math.min(100, (value / 150) * 100)}%` }}
+                              />
+                            </div>
+                            <span className="font-mono text-xs text-[var(--text-secondary)] w-12 text-right">
+                              {value.toFixed(1)}
+                            </span>
                           </div>
-                          <span className="font-mono text-xs text-[var(--text-secondary)] w-12 text-right">{value.toFixed(1)}</span>
+                        ))}
+                        <div className="flex items-center gap-3 pt-2.5 border-t border-[var(--border)]">
+                          <span className="font-mono text-[0.65rem] text-[var(--red)] w-20 md:w-24">
+                            TRUE
+                          </span>
+                          <div className="flex-1" />
+                          <span className="font-mono text-xs w-12 text-right">
+                            {prediction.true_rul.toFixed(0)}
+                          </span>
                         </div>
-                      ))}
-                      <div className="flex items-center gap-3 pt-2.5 border-t border-[var(--border)]">
-                        <span className="font-mono text-[0.65rem] text-[var(--red)] w-20 md:w-24">TRUE</span>
-                        <div className="flex-1" />
-                        <span className="font-mono text-xs w-12 text-right">{prediction.true_rul.toFixed(0)}</span>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Trajectory chart — real ML data */}
                 {trajectoryLoading && (
                   <div className="card p-8 text-center">
                     <div className="flex items-center justify-center gap-3">
                       <Spinner />
-                      <span className="text-[var(--text-secondary)] text-sm">Computing per-cycle trajectory...</span>
+                      <span className="text-[var(--text-secondary)] text-sm">
+                        Computing per-cycle trajectory...
+                      </span>
                     </div>
                   </div>
                 )}
@@ -304,32 +363,60 @@ export default function PredictionPage() {
                     <PlotlyChart
                       data={[
                         {
-                          x: trajectoryData.map(d => d.cycle),
-                          y: trajectoryData.map(d => d.predicted_rul + 1.96 * (d.uncertainty || 5)),
-                          type: 'scatter', mode: 'lines', name: 'Upper CI',
-                          line: { color: 'rgba(245, 158, 11, 0.2)', width: 0, shape: 'spline', smoothing: 1.3 },
+                          x: trajectoryData.map((d) => d.cycle),
+                          y: trajectoryData.map(
+                            (d) => d.predicted_rul + 1.96 * (d.uncertainty || 5),
+                          ),
+                          type: 'scatter',
+                          mode: 'lines',
+                          name: 'Upper CI',
+                          line: {
+                            color: 'rgba(245, 158, 11, 0.2)',
+                            width: 0,
+                            shape: 'spline',
+                            smoothing: 1.3,
+                          },
                           showlegend: false,
                         },
                         {
-                          x: trajectoryData.map(d => d.cycle),
-                          y: trajectoryData.map(d => Math.max(0, d.predicted_rul - 1.96 * (d.uncertainty || 5))),
-                          type: 'scatter', mode: 'lines', name: '95% CI',
+                          x: trajectoryData.map((d) => d.cycle),
+                          y: trajectoryData.map((d) =>
+                            Math.max(0, d.predicted_rul - 1.96 * (d.uncertainty || 5)),
+                          ),
+                          type: 'scatter',
+                          mode: 'lines',
+                          name: '95% CI',
                           fill: 'tonexty',
                           fillcolor: 'rgba(245, 158, 11, 0.07)',
-                          line: { color: 'rgba(245, 158, 11, 0.2)', width: 0, shape: 'spline', smoothing: 1.3 },
+                          line: {
+                            color: 'rgba(245, 158, 11, 0.2)',
+                            width: 0,
+                            shape: 'spline',
+                            smoothing: 1.3,
+                          },
                           showlegend: false,
                         },
                         {
-                          x: trajectoryData.map(d => d.cycle),
-                          y: trajectoryData.map(d => d.predicted_rul),
-                          type: 'scatter', mode: 'lines', name: 'Predicted',
+                          x: trajectoryData.map((d) => d.cycle),
+                          y: trajectoryData.map((d) => d.predicted_rul),
+                          type: 'scatter',
+                          mode: 'lines',
+                          name: 'Predicted',
                           line: { color: '#f59e0b', width: 2, shape: 'spline', smoothing: 1.3 },
                         },
                         {
-                          x: trajectoryData.map(d => d.cycle),
-                          y: trajectoryData.map(d => d.true_rul),
-                          type: 'scatter', mode: 'lines', name: 'True RUL',
-                          line: { color: '#ef4444', width: 2, dash: 'dash', shape: 'spline', smoothing: 1.3 },
+                          x: trajectoryData.map((d) => d.cycle),
+                          y: trajectoryData.map((d) => d.true_rul),
+                          type: 'scatter',
+                          mode: 'lines',
+                          name: 'True RUL',
+                          line: {
+                            color: '#ef4444',
+                            width: 2,
+                            dash: 'dash',
+                            shape: 'spline',
+                            smoothing: 1.3,
+                          },
                         },
                       ]}
                       layout={{
@@ -337,7 +424,13 @@ export default function PredictionPage() {
                         margin: { t: 20, b: 50, l: 50, r: 20 },
                         xaxis: { title: { text: 'Cycle', font: { size: 10 } } },
                         yaxis: { title: { text: 'RUL (cycles)', font: { size: 10 } } },
-                        legend: { orientation: 'h', y: 1.1, x: 0.5, xanchor: 'center', font: { size: 9 } },
+                        legend: {
+                          orientation: 'h',
+                          y: 1.1,
+                          x: 0.5,
+                          xanchor: 'center',
+                          font: { size: 9 },
+                        },
                       }}
                     />
                   </div>
@@ -352,7 +445,8 @@ export default function PredictionPage() {
                     </p>
                   ) : prediction.health_score > 0.3 ? (
                     <p className="text-sm text-[var(--amber)]">
-                      Elevated degradation. Schedule maintenance within {Math.floor(prediction.rul * 0.7)} cycles.
+                      Elevated degradation. Schedule maintenance within{' '}
+                      {Math.floor(prediction.rul * 0.7)} cycles.
                     </p>
                   ) : (
                     <p className="text-sm text-[var(--red)]">

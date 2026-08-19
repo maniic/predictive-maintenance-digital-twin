@@ -1,10 +1,9 @@
 """Tests for data ingestion and RUL computation."""
 
-import numpy as np
 import pandas as pd
 import pytest
 
-from src.data.ingestion import compute_train_rul, compute_test_rul
+from src.data.ingestion import compute_test_rul, compute_train_rul
 
 
 def make_train_df(engines):

@@ -33,8 +33,8 @@ def get_engines(dataset: str) -> dict:
 
 def get_prediction(dataset: str, engine_id: int, model: str) -> dict:
     """Get RUL prediction for an engine."""
-    from src.digital_twin import RULPredictor
     from src.data.ingestion import CMAPSSDataLoader, compute_test_rul
+    from src.digital_twin import RULPredictor
 
     # Load test data
     loader = CMAPSSDataLoader(raw_data_dir=str(project_root / "data" / "raw"))
@@ -87,8 +87,8 @@ def get_comparison() -> dict:
 
 def get_trajectory(dataset: str, engine_id: int) -> dict:
     """Get per-cycle RUL trajectory for an engine using real ML inference."""
-    from src.digital_twin import RULPredictor
     from src.data.ingestion import CMAPSSDataLoader, compute_test_rul
+    from src.digital_twin import RULPredictor
 
     loader = CMAPSSDataLoader(raw_data_dir=str(project_root / "data" / "raw"))
     data = loader.load_dataset(dataset)
@@ -104,7 +104,7 @@ def get_trajectory(dataset: str, engine_id: int) -> dict:
     predictor = RULPredictor(dataset=dataset, models_dir=str(project_root / "models"))
     predictor.load_models()
 
-    seq_len = predictor.sequence_length if hasattr(predictor, 'sequence_length') else 30
+    seq_len = predictor.sequence_length if hasattr(predictor, "sequence_length") else 30
     start_cycle = max(seq_len, 30)
 
     trajectory = []
@@ -114,19 +114,23 @@ def get_trajectory(dataset: str, engine_id: int) -> dict:
 
         try:
             result = predictor.predict_from_dataframe(slice_df, engine_id=engine_id)
-            trajectory.append({
-                "cycle": int(slice_df["cycle"].iloc[-1]),
-                "predicted_rul": round(float(result.rul), 2),
-                "uncertainty": round(float(result.uncertainty), 2),
-                "true_rul": round(true_rul, 2),
-            })
+            trajectory.append(
+                {
+                    "cycle": int(slice_df["cycle"].iloc[-1]),
+                    "predicted_rul": round(float(result.rul), 2),
+                    "uncertainty": round(float(result.uncertainty), 2),
+                    "true_rul": round(true_rul, 2),
+                }
+            )
         except Exception:
-            trajectory.append({
-                "cycle": int(slice_df["cycle"].iloc[-1]),
-                "predicted_rul": round(true_rul, 2),
-                "uncertainty": 5.0,
-                "true_rul": round(true_rul, 2),
-            })
+            trajectory.append(
+                {
+                    "cycle": int(slice_df["cycle"].iloc[-1]),
+                    "predicted_rul": round(true_rul, 2),
+                    "uncertainty": 5.0,
+                    "true_rul": round(true_rul, 2),
+                }
+            )
 
     return {
         "trajectory": trajectory,
@@ -142,8 +146,8 @@ def run_simulation(initial_rul: int, degradation_rate: float, fault_mode: str) -
     Uses DegradationSimulator to generate sensor readings and RULPredictor
     to make predictions at each cycle after warmup.
     """
-    from src.digital_twin.simulator import DegradationSimulator, DegradationConfig, FaultMode
     from src.digital_twin import RULPredictor
+    from src.digital_twin.simulator import DegradationConfig, DegradationSimulator, FaultMode
 
     fault_map = {
         "hpc": FaultMode.HPC_DEGRADATION,
@@ -211,7 +215,11 @@ def run_simulation(initial_rul: int, degradation_rate: float, fault_mode: str) -
 
 def main():
     parser = argparse.ArgumentParser(description="ML prediction CLI")
-    parser.add_argument("--action", default="predict", choices=["predict", "engines", "comparison", "simulate", "trajectory"])
+    parser.add_argument(
+        "--action",
+        default="predict",
+        choices=["predict", "engines", "comparison", "simulate", "trajectory"],
+    )
     parser.add_argument("--dataset", default="FD001")
     parser.add_argument("--engine", type=int, default=1)
     parser.add_argument("--model", default="ensemble")

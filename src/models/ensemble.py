@@ -26,6 +26,7 @@ class EnsemblePrediction:
         individual: Dictionary of individual model predictions
         weights: Weights used for each model
     """
+
     mean: Tensor
     std: Tensor
     individual: dict[str, Tensor]
@@ -114,10 +115,7 @@ class EnsembleModel(nn.Module):
             )
         else:
             # Fixed weights
-            self.register_buffer(
-                "_fixed_weights",
-                torch.tensor(weight_values, dtype=torch.float32)
-            )
+            self.register_buffer("_fixed_weights", torch.tensor(weight_values, dtype=torch.float32))
 
         self.learnable_weights = learnable_weights
 
@@ -207,8 +205,8 @@ class EnsembleModel(nn.Module):
         weighted_mean = torch.sum(stacked * weights.unsqueeze(1), dim=0)
 
         # Weighted variance: E[X^2] - E[X]^2
-        weighted_sq_mean = torch.sum(stacked ** 2 * weights.unsqueeze(1), dim=0)
-        variance = weighted_sq_mean - weighted_mean ** 2
+        weighted_sq_mean = torch.sum(stacked**2 * weights.unsqueeze(1), dim=0)
+        variance = weighted_sq_mean - weighted_mean**2
 
         # Handle numerical issues (variance should be non-negative)
         variance = torch.clamp(variance, min=0)
@@ -274,7 +272,7 @@ class EnsembleModel(nn.Module):
 
         # Compute weights based on method
         if method == "inverse_rmse":
-            rmse = {name: mse ** 0.5 for name, mse in model_mse.items()}
+            rmse = {name: mse**0.5 for name, mse in model_mse.items()}
             inv_rmse = {name: 1.0 / r for name, r in rmse.items()}
             total = sum(inv_rmse.values())
             weights = {name: v / total for name, v in inv_rmse.items()}
@@ -286,7 +284,8 @@ class EnsembleModel(nn.Module):
 
         elif method == "softmax_rmse":
             import math
-            rmse = {name: mse ** 0.5 for name, mse in model_mse.items()}
+
+            rmse = {name: mse**0.5 for name, mse in model_mse.items()}
             exp_neg_rmse = {name: math.exp(-r) for name, r in rmse.items()}
             total = sum(exp_neg_rmse.values())
             weights = {name: v / total for name, v in exp_neg_rmse.items()}
@@ -310,9 +309,7 @@ class EnsembleModel(nn.Module):
         if self.learnable_weights:
             # Update log weights
             with torch.no_grad():
-                self._log_weights.copy_(
-                    torch.log(torch.tensor(weight_values, dtype=torch.float32))
-                )
+                self._log_weights.copy_(torch.log(torch.tensor(weight_values, dtype=torch.float32)))
         else:
             # Update fixed weights
             self._fixed_weights = torch.tensor(
@@ -388,7 +385,5 @@ class EnsembleModel(nn.Module):
 
     def __repr__(self) -> str:
         """String representation of ensemble."""
-        weight_str = ", ".join(
-            f"{name}={w:.3f}" for name, w in self.weight_dict.items()
-        )
+        weight_str = ", ".join(f"{name}={w:.3f}" for name, w in self.weight_dict.items())
         return f"EnsembleModel(models=[{', '.join(self.model_names)}], weights=[{weight_str}])"

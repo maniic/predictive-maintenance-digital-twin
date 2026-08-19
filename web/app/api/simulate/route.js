@@ -1,45 +1,34 @@
-import { spawn } from 'child_process'
-import path from 'path'
+import { runPython } from '../../../lib/python'
 
-const PROCESS_TIMEOUT_MS = 60000
+const TIMEOUT_MS = 60000
+
+/** GET /api/simulate?initial_rul=150&rate=1.0&mode=hpc */
+export async function GET(request) {
+  const { searchParams } = new URL(request.url)
+  return run({
+    initialRul: searchParams.get('initial_rul') || '150',
+    degradationRate: searchParams.get('rate') || '1.0',
+    faultMode: searchParams.get('mode') || 'hpc',
+  })
+}
 
 export async function POST(request) {
   const { initialRul = 150, degradationRate = 1.0, faultMode = 'hpc' } = await request.json()
+  return run({ initialRul, degradationRate, faultMode })
+}
 
-  const projectRoot = path.resolve(process.cwd(), '..')
-
-  return new Promise((resolve) => {
-    const py = spawn('python', [
-      'src/api/predict.py',
-      '--action', 'simulate',
-      '--initial_rul', String(initialRul),
-      '--rate', String(degradationRate),
-      '--mode', faultMode,
-    ], { cwd: projectRoot })
-
-    let stdout = ''
-    let stderr = ''
-
-    const timer = setTimeout(() => {
-      py.kill('SIGTERM')
-      resolve(Response.json({ error: 'Simulation timed out' }, { status: 504 }))
-    }, PROCESS_TIMEOUT_MS)
-
-    py.stdout.on('data', (data) => { stdout += data })
-    py.stderr.on('data', (data) => { stderr += data })
-
-    py.on('close', (code) => {
-      clearTimeout(timer)
-      if (code !== 0) {
-        resolve(Response.json({ error: 'Simulation failed' }, { status: 500 }))
-      } else {
-        try {
-          const result = JSON.parse(stdout)
-          resolve(Response.json(result))
-        } catch {
-          resolve(Response.json({ error: 'Invalid response from simulation' }, { status: 500 }))
-        }
-      }
-    })
-  })
+function run({ initialRul, degradationRate, faultMode }) {
+  return runPython(
+    [
+      '--action',
+      'simulate',
+      '--initial_rul',
+      String(initialRul),
+      '--rate',
+      String(degradationRate),
+      '--mode',
+      faultMode,
+    ],
+    { timeoutMs: TIMEOUT_MS, errorMessage: 'Simulation failed' },
+  )
 }

@@ -14,10 +14,10 @@ import torch
 
 from src.data.preprocessing import CMAPSSPreprocessor
 from src.models import (
+    EnsembleModel,
     LSTMModel,
     TemporalCNNModel,
     TransformerModel,
-    EnsembleModel,
 )
 
 
@@ -32,6 +32,7 @@ class PredictionResult:
         weights: Ensemble weights used
         health_score: Derived health score (0-1)
     """
+
     rul: float
     uncertainty: float
     individual_predictions: dict[str, float]
@@ -220,9 +221,7 @@ class RULPredictor:
 
         # Get last sequence_length rows
         if len(df) < self.sequence_length:
-            raise ValueError(
-                f"Need at least {self.sequence_length} rows, got {len(df)}"
-            )
+            raise ValueError(f"Need at least {self.sequence_length} rows, got {len(df)}")
         df_seq = df.tail(self.sequence_length)
 
         # Apply preprocessing
@@ -251,7 +250,7 @@ class RULPredictor:
             )
 
         # Convert to DataFrame
-        df = pd.DataFrame(readings_history[-self.sequence_length:])
+        df = pd.DataFrame(readings_history[-self.sequence_length :])
 
         # Add required columns if missing
         if "unit_id" not in df.columns:

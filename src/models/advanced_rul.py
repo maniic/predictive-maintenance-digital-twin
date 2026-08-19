@@ -9,11 +9,11 @@ Implements multiple strategies for improved RUL prediction:
 
 from typing import Optional
 
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-import pytorch_lightning as pl
 
 from src.models.base import BaseRULModel
 
@@ -75,13 +75,11 @@ class AsymmetricLoss(nn.Module):
         # Smooth approximation of asymmetric penalty
         # Late: exp(d/a1) - 1, Early: exp(-d/a2) - 1
         late_loss = torch.where(
-            diff >= 0,
-            (torch.exp(diff / self.a1) - 1),
-            (torch.exp(-diff / self.a2) - 1)
+            diff >= 0, (torch.exp(diff / self.a1) - 1), (torch.exp(-diff / self.a2) - 1)
         )
 
         # Combine with MSE for stability
-        mse_loss = diff ** 2
+        mse_loss = diff**2
 
         return 0.5 * mse_loss.mean() + 0.5 * late_loss.mean()
 
@@ -104,7 +102,7 @@ class FocalRULLoss(nn.Module):
         normalized_error = torch.clamp(normalized_error, max=1.0)
 
         # Focal weight: (1 - p)^gamma where p is accuracy
-        focal_weight = normalized_error ** self.gamma
+        focal_weight = normalized_error**self.gamma
 
         mse = (pred - target) ** 2
         return (focal_weight * mse).mean()
@@ -345,9 +343,9 @@ class TwoStageRULModel(pl.LightningModule):
 
         # Weighted combination based on class probabilities
         rul_pred = (
-            class_probs[:, 0] * rul_critical +
-            class_probs[:, 1] * rul_degrading +
-            class_probs[:, 2] * rul_healthy
+            class_probs[:, 0] * rul_critical
+            + class_probs[:, 1] * rul_degrading
+            + class_probs[:, 2] * rul_healthy
         )
 
         return class_logits, rul_pred

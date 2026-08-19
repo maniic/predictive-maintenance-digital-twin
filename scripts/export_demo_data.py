@@ -9,10 +9,12 @@ API routes would normally serve into web/public/demo/*.json:
 - prediction_<DS>_<ID>.json        RUL prediction snapshot per sampled engine
 - trajectory_<DS>_<ID>.json        per-cycle RUL trajectory per sampled engine
 
-Ground-truth RUL comes from the real C-MAPSS test files. Model predictions are
-emulated to match each dataset's reported test RMSE (noise around the
-piecewise-linear RUL target), since trained checkpoints are not stored in the
-repo. Payloads are tagged "demo": true and the UI shows a demo badge.
+Ground-truth RUL comes from the real C-MAPSS test files. The predictions are NOT
+model outputs: trained checkpoints are not committed, so each prediction is an
+illustrative value drawn around the piecewise-linear RUL target with noise scaled
+to that dataset's reported test RMSE. Payloads are tagged "demo": true, the nav
+shows a DEMO badge, and the prediction and simulation views carry a banner saying
+so. For real inference, train locally and run scripts/predict.py.
 """
 
 import json
@@ -24,8 +26,9 @@ RAW_DIR = PROJECT_ROOT / "data" / "raw"
 OUT_DIR = PROJECT_ROOT / "web" / "public" / "demo"
 
 DATASETS = ["FD001", "FD002", "FD003", "FD004"]
-# Reported ensemble/best test RMSE per dataset (see README results table)
-DATASET_RMSE = {"FD001": 13.48, "FD002": 16.77, "FD003": 11.71, "FD004": 14.87}
+# Best reported test RMSE per dataset (see the README results table). Used only
+# to scale the illustrative noise, so the demo's error looks like the real one.
+DATASET_RMSE = {"FD001": 13.48, "FD002": 16.77, "FD003": 11.71, "FD004": 14.75}
 RUL_CAP = 125  # piecewise-linear RUL target used during training
 ENGINES_PER_DATASET = 8
 MODELS = ["lstm", "cnn", "transformer", "ensemble"]
@@ -35,7 +38,9 @@ def load_test_data(dataset: str):
     """Return {engine_id: [(cycle, true_rul), ...]} for a C-MAPSS test set."""
     test_file = RAW_DIR / f"test_{dataset}.txt"
     rul_file = RAW_DIR / f"RUL_{dataset}.txt"
-    final_ruls = [int(float(line.split()[0])) for line in rul_file.read_text().split("\n") if line.strip()]
+    final_ruls = [
+        int(float(line.split()[0])) for line in rul_file.read_text().split("\n") if line.strip()
+    ]
 
     engines: dict[int, list[int]] = {}
     for line in test_file.read_text().split("\n"):
@@ -91,47 +96,59 @@ def export_dataset(dataset: str) -> None:
                 continue
             noise = 0.75 * noise + rng.gauss(0, rmse * 0.55)
             predicted = max(0.0, min(rul, RUL_CAP) + noise)
-            trajectory.append({
-                "cycle": cycle,
-                "predicted_rul": round(predicted, 2),
-                "uncertainty": round(rmse * rng.uniform(0.5, 0.9), 2),
-                "true_rul": float(rul),
-            })
+            trajectory.append(
+                {
+                    "cycle": cycle,
+                    "predicted_rul": round(predicted, 2),
+                    "uncertainty": round(rmse * rng.uniform(0.5, 0.9), 2),
+                    "true_rul": float(rul),
+                }
+            )
         (OUT_DIR / f"trajectory_{dataset}_{engine_id}.json").write_text(
-            json.dumps({
-                "trajectory": trajectory,
-                "total_cycles": total_cycles,
-                "engine_id": engine_id,
-                "dataset": dataset,
-                "demo": True,
-            })
+            json.dumps(
+                {
+                    "trajectory": trajectory,
+                    "total_cycles": total_cycles,
+                    "engine_id": engine_id,
+                    "dataset": dataset,
+                    "demo": True,
+                }
+            )
         )
 
         # Final prediction snapshot with per-model spread
-        individual = {m: round(emulate_prediction(true_rul, rmse, rng), 2) for m in MODELS if m != "ensemble"}
+        individual = {
+            m: round(emulate_prediction(true_rul, rmse, rng), 2) for m in MODELS if m != "ensemble"
+        }
         ensemble = round(sum(individual.values()) / len(individual), 2)
         individual["ensemble"] = ensemble
         health = max(0.0, min(1.0, ensemble / RUL_CAP))
         (OUT_DIR / f"prediction_{dataset}_{engine_id}.json").write_text(
-            json.dumps({
-                "engine_id": engine_id,
-                "dataset": dataset,
-                "model": "ensemble",
-                "rul": ensemble,
-                "uncertainty": round(rmse * 0.7, 2),
-                "health_score": round(health, 4),
-                "true_rul": true_rul,
-                "error": round(ensemble - true_rul, 2),
-                "individual_predictions": individual,
-                "total_cycles": total_cycles,
-                "demo": True,
-            })
+            json.dumps(
+                {
+                    "engine_id": engine_id,
+                    "dataset": dataset,
+                    "model": "ensemble",
+                    "rul": ensemble,
+                    "uncertainty": round(rmse * 0.7, 2),
+                    "health_score": round(health, 4),
+                    "true_rul": true_rul,
+                    "error": round(ensemble - true_rul, 2),
+                    "individual_predictions": individual,
+                    "total_cycles": total_cycles,
+                    "demo": True,
+                }
+            )
         )
 
 
 def export_comparison() -> None:
     results = []
-    for name in ["training_results.json", "advanced_training_results.json", "improved_training_results.json"]:
+    for name in [
+        "training_results.json",
+        "advanced_training_results.json",
+        "improved_training_results.json",
+    ]:
         path = PROJECT_ROOT / "models" / name
         if path.exists():
             results.extend(json.loads(path.read_text()))

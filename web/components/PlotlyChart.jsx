@@ -37,12 +37,7 @@ export default function PlotlyChart({ data, layout, config, className = '' }) {
 
   return (
     <div className={className}>
-      <Plot
-        data={data}
-        layout={defaultLayout}
-        config={defaultConfig}
-        style={{ width: '100%' }}
-      />
+      <Plot data={data} layout={defaultLayout} config={defaultConfig} style={{ width: '100%' }} />
     </div>
   )
 }

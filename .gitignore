@@ -36,9 +36,9 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
-# Data files (large - provide download instructions instead)
-data/raw/*.txt
-data/raw/*.pdf
+# C-MAPSS raw data IS tracked: it is public-domain NASA data, ~11.5 MB in the
+# git pack, and verified against data/raw/CHECKSUMS.sha256. See docs/data.md.
+# Only the derived artefacts are ignored.
 data/processed/
 
 # Model artifacts - binary files
@@ -52,8 +52,8 @@ models/checkpoints/
 models/checkpoints_*/
 models/preprocessors/
 
-# Keep training results JSON files (tracked)
-# !models/*_results.json
+# Published result files are tracked; ad-hoc runs from scripts/train.py are not
+models/training_runs/
 
 # PyTorch Lightning
 lightning_logs/

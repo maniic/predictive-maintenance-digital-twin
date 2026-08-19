@@ -36,7 +36,7 @@ class MultiHeadAttention(nn.Module):
         self.out = nn.Linear(hidden_size, hidden_size)
 
         self.dropout = nn.Dropout(dropout)
-        self.scale = self.head_dim ** -0.5
+        self.scale = self.head_dim**-0.5
 
     def forward(self, x: Tensor) -> tuple[Tensor, Tensor]:
         """Apply multi-head attention.
@@ -74,7 +74,9 @@ class MultiHeadAttention(nn.Module):
 class LSTMBlock(nn.Module):
     """LSTM block with layer normalization and residual connection."""
 
-    def __init__(self, input_size: int, hidden_size: int, dropout: float = 0.2, bidirectional: bool = True):
+    def __init__(
+        self, input_size: int, hidden_size: int, dropout: float = 0.2, bidirectional: bool = True
+    ):
         super().__init__()
 
         self.lstm = nn.LSTM(
@@ -158,9 +160,7 @@ class ImprovedLSTMModel(BaseRULModel):
         self.lstm_blocks = nn.ModuleList()
 
         # First block takes hidden_size input
-        self.lstm_blocks.append(
-            LSTMBlock(hidden_size, hidden_size, dropout, bidirectional)
-        )
+        self.lstm_blocks.append(LSTMBlock(hidden_size, hidden_size, dropout, bidirectional))
 
         # Subsequent blocks take lstm_output_size input
         for _ in range(num_layers - 1):

@@ -1,1 +1,1 @@
-{"engine_id": 31, "dataset": "FD004", "model": "ensemble", "rul": 11.48, "uncertainty": 10.41, "health_score": 0.0918, "true_rul": 6.0, "error": 5.48, "individual_predictions": {"lstm": 15.44, "cnn": 18.83, "transformer": 0.17, "ensemble": 11.48}, "total_cycles": 134, "demo": true}
+{"engine_id": 31, "dataset": "FD004", "model": "ensemble", "rul": 11.44, "uncertainty": 10.32, "health_score": 0.0915, "true_rul": 6.0, "error": 5.44, "individual_predictions": {"lstm": 15.36, "cnn": 18.73, "transformer": 0.22, "ensemble": 11.44}, "total_cycles": 134, "demo": true}
